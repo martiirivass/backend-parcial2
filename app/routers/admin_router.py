@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, Query
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Annotated, Optional
 from sqlmodel import Session, select
 
 from app.db.database import get_session
-from app.schemas.admin_schema import AdminUserUpdate, AdminUserRead
+from app.schemas.admin_schema import AdminUserUpdate
 from app.auth.permissions import require_roles
 from app.models.usuario import Usuario
+from app.models.usuario_rol_model import UsuarioRol
+from app.models.rol import Rol
 
 router = APIRouter(
     prefix="/admin",
@@ -24,11 +27,12 @@ def listar_usuarios(
 ):
     statement = select(Usuario)
 
+    # Filtro por rol via tabla intermedia
     if rol_id is not None:
-        statement = statement.where(Usuario.rol_id == rol_id)
+        statement = statement.join(UsuarioRol).where(
+            UsuarioRol.rol_id == rol_id
+        )
 
-    # Clientes deleted_at is None o no (depende si mostramos borrados)
-    # Por ahora mostramos todos menos los fisicamente eliminados
     usuarios = db.exec(statement).all()
 
     return {
@@ -46,7 +50,6 @@ def obtener_usuario(
 ):
     usuario = db.get(Usuario, usuario_id)
     if not usuario:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return usuario
 
@@ -59,13 +62,23 @@ def actualizar_usuario(
     db: Session = Depends(get_session),
     current_user = Depends(require_roles("ADMIN"))
 ):
-    from fastapi import HTTPException
-
     usuario = db.get(Usuario, usuario_id)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     update_data = datos.model_dump(exclude_unset=True)
+
+    # Si vienen roles, los asigno via la tabla intermedia
+    if "rol_ids" in update_data:
+        roles = []
+        for rid in update_data["rol_ids"]:
+            rol = db.get(Rol, rid)
+            if rol:
+                roles.append(rol)
+        usuario.roles = roles
+        del update_data["rol_ids"]
+
+    # Actualizo el resto de los campos
     for key, value in update_data.items():
         setattr(usuario, key, value)
 
@@ -83,9 +96,6 @@ def eliminar_usuario(
     db: Session = Depends(get_session),
     current_user = Depends(require_roles("ADMIN"))
 ):
-    from datetime import datetime, timezone
-    from fastapi import HTTPException
-
     usuario = db.get(Usuario, usuario_id)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")

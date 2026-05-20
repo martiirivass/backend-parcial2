@@ -42,7 +42,7 @@ def listar_pedidos(
     service = PedidoService(db)
     return service.listar_pedidos(
         current_user.id,
-        current_user.rol.codigo,
+        current_user.tiene_rol("CLIENT"),
         limit,
         offset,
         estado_id=estado_id

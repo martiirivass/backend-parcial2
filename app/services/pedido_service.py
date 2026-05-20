@@ -200,9 +200,9 @@ class PedidoService:
             self.uow.rollback()
             raise
 
-    def listar_pedidos(self, usuario_id, rol_codigo, limit, offset, estado_id=None):
+    def listar_pedidos(self, usuario_id, es_cliente, limit, offset, estado_id=None):
         # Si es CLIENT, ve solo sus pedidos
-        if rol_codigo == "CLIENT":
+        if es_cliente:
             pedidos = self.repo.get_by_usuario(usuario_id)
         else:
             # ADMIN o PEDIDOS ven todos
