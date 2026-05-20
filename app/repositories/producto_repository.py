@@ -1,5 +1,7 @@
-from sqlmodel import Session, select
+from typing import Optional
+from sqlmodel import Session, select, or_
 from app.models.producto_model import Producto
+from app.models.producto_categoria_model import ProductoCategoria
 from app.repositories.base import BaseRepository
 
 
@@ -20,6 +22,38 @@ class ProductoRepository(BaseRepository[Producto]):
                 Producto.activo == True
             )
         ).first()
+
+    def get_all_filtered(
+        self,
+        categoria_id: Optional[int] = None,
+        disponible: Optional[bool] = None,
+        q: Optional[str] = None
+    ):
+        statement = select(Producto).where(Producto.activo == True)
+
+        # Filtro por categoria (join con tabla intermedia)
+        if categoria_id is not None:
+            statement = statement.join(
+                ProductoCategoria,
+                Producto.id == ProductoCategoria.producto_id
+            ).where(
+                ProductoCategoria.categoria_id == categoria_id
+            )
+
+        # Filtro por disponibilidad
+        if disponible is not None:
+            statement = statement.where(Producto.disponible == disponible)
+
+        # Busqueda por texto
+        if q is not None and q.strip():
+            statement = statement.where(
+                or_(
+                    Producto.nombre.ilike(f"%{q}%"),
+                    Producto.descripcion.ilike(f"%{q}%")
+                )
+            )
+
+        return self.db.exec(statement).all()
 
     def delete(self, producto: Producto):
         producto.activo = False

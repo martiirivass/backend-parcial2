@@ -12,6 +12,8 @@ class ProductoBase(SQLModel):
     nombre: str
     descripcion: Optional[str] = None
     precio: float
+    stock_cantidad: int = 0
+    disponible: bool = True
 
     @field_validator("nombre")
     def validar_nombre(cls, v):
@@ -39,6 +41,8 @@ class ProductoUpdate(SQLModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     precio: Optional[float] = None
+    stock_cantidad: Optional[int] = None
+    disponible: Optional[bool] = None
     categoria_ids: Optional[List[int]] = None
     ingrediente_ids: Optional[List[int]] = None
     
@@ -56,3 +60,8 @@ class ProductoRead(ProductoBase):
 class ProductoReadWithRelations(ProductoRead):
     categorias: List["CategoriaRead"] = []
     ingredientes: List["IngredienteRead"] = []
+
+
+class ProductoDisponibilidadUpdate(SQLModel):
+    disponible: bool
+    stock_cantidad: Optional[int] = None
