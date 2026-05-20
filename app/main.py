@@ -3,6 +3,7 @@ from app.db.init_db import init_db
 from app.routers.producto_router import router as producto
 from app.routers.categoria_router import router as categoria
 from app.routers.ingrediente_router import router as ingrediente
+from app.auth.router import router as auth_router
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,6 +25,7 @@ app.add_middleware(
 def on_startup():
     init_db()
 
-app.include_router(producto)
-app.include_router(categoria)
-app.include_router(ingrediente)
+app.include_router(producto, prefix="/api/v1")
+app.include_router(categoria, prefix="/api/v1")
+app.include_router(ingrediente, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
