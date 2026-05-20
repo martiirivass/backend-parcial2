@@ -78,7 +78,7 @@ def register_user(
         apellido="",  # Opcional por ahora
         email=email,
         password=hash_password(password),
-        rol_id=rol_cliente.id
+        roles=[rol_cliente]  # Asigno el rol CLIENT por defecto
     )
 
     session.add(user)

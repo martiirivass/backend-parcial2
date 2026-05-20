@@ -49,6 +49,28 @@ class CategoriaService:
             "total": len(categorias)
         }
 
+    # Consulta recursiva: arbol de categorias
+    def get_tree(self):
+        # Traigo todas las categorias activas
+        todas = self.repo.get_all()
+
+        # Construyo el arbol recursivamente
+        def _build_tree(parent_id=None):
+            tree = []
+            for cat in todas:
+                if cat.parent_id == parent_id:
+                    categoria_data = {
+                        "id": cat.id,
+                        "nombre": cat.nombre,
+                        "descripcion": cat.descripcion,
+                        "parent_id": cat.parent_id,
+                        "subcategorias": _build_tree(cat.id)
+                    }
+                    tree.append(categoria_data)
+            return tree
+
+        return _build_tree()
+
     # Obtener categoría por ID
     def obtener_categoria(self, categoria_id: int):
 

@@ -96,7 +96,7 @@ def seed_admin(session):
             apellido="Sistema",
             email="admin@admin.com",
             password=hash_password("admin123"),
-            rol_id=rol_admin.id
+            roles=[rol_admin]
         )
         session.add(admin)
         print("  Usuario admin creado: admin@admin.com / admin123")
