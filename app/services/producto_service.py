@@ -1,5 +1,3 @@
-# app/services/producto_service.py
-
 import logging
 from fastapi import HTTPException
 
@@ -24,12 +22,9 @@ class ProductoService:
     def crear_producto(self, producto_data):
 
         try:
-
-            nuevo = Producto(
-                nombre=producto_data.nombre,
-                descripcion=producto_data.descripcion,
-                precio=producto_data.precio
-            )
+            # Uso model_dump para pasar todos los campos de una
+            data = producto_data.model_dump(exclude={"categoria_ids", "ingrediente_ids"})
+            nuevo = Producto(**data)
 
             if producto_data.categoria_ids:
                 categorias = [
@@ -71,19 +66,95 @@ class ProductoService:
 
         return producto
 
-    def listar_productos(self, limit, offset):
+    def listar_productos(self, limit, offset, categoria_id=None, disponible=None, q=None):
 
-        productos = self.repo.get_all()
+        productos = self.repo.get_all_filtered(
+            categoria_id=categoria_id,
+            disponible=disponible,
+            q=q
+        )
 
         return {
             "data": productos[offset: offset + limit],
             "total": len(productos)
         }
 
+    def actualizar_disponibilidad(self, producto_id, datos):
+
+        try:
+            producto = self.repo.get_by_id(producto_id)
+
+            if not producto:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Producto no encontrado"
+                )
+
+            producto.disponible = datos.disponible
+
+            if datos.stock_cantidad is not None:
+                producto.stock_cantidad = datos.stock_cantidad
+
+            self.repo.update(producto)
+
+            self.uow.commit()
+            self.db.refresh(producto)
+
+            return producto
+
+        except Exception as e:
+            logger.exception(f"Error updating disponibilidad: {e}")
+            self.uow.rollback()
+            raise
+
+    def actualizar_producto(self, producto_id, datos):
+
+        try:
+            producto = self.repo.get_by_id(producto_id)
+
+            if not producto:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Producto no encontrado"
+                )
+
+            update_data = datos.model_dump(exclude_unset=True)
+
+            for key, value in update_data.items():
+                if key not in ("categoria_ids", "ingrediente_ids"):
+                    setattr(producto, key, value)
+
+            # Actualizar categorias si viene
+            if hasattr(datos, "categoria_ids") and datos.categoria_ids is not None:
+                categorias = [
+                    self.cat_repo.get_by_id(cid)
+                    for cid in datos.categoria_ids
+                ]
+                producto.categorias = [c for c in categorias if c]
+
+            # Actualizar ingredientes si viene
+            if hasattr(datos, "ingrediente_ids") and datos.ingrediente_ids is not None:
+                ingredientes = [
+                    self.ing_repo.get_by_id(iid)
+                    for iid in datos.ingrediente_ids
+                ]
+                producto.ingredientes = [i for i in ingredientes if i]
+
+            self.repo.update(producto)
+
+            self.uow.commit()
+            self.db.refresh(producto)
+
+            return producto
+
+        except Exception as e:
+            logger.exception(f"Error updating producto: {e}")
+            self.uow.rollback()
+            raise
+
     def eliminar_producto(self, producto_id):
 
         try:
-
             producto = self.repo.get_by_id(producto_id)
 
             if not producto:

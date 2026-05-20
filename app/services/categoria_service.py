@@ -1,8 +1,10 @@
 import logging
 
 from fastapi import HTTPException
+from sqlmodel import select
 
 from app.models.categoria_model import Categoria
+from app.models.producto_categoria_model import ProductoCategoria
 from app.repositories.categoria_repository import CategoriaRepository
 from app.unit_of_work import UnitOfWork
 
@@ -37,10 +39,10 @@ class CategoriaService:
             self.uow.rollback()
             raise
 
-    # Listar categorías
-    def listar_categorias(self, limit: int, offset: int):
+    # Listar categorías con filtro opcional por parent_id
+    def listar_categorias(self, limit: int, offset: int, parent_id=None):
 
-        categorias = self.repo.get_all()
+        categorias = self.repo.get_all(parent_id=parent_id)
 
         return {
             "data": categorias[offset: offset + limit],
@@ -90,7 +92,7 @@ class CategoriaService:
             self.uow.rollback()
             raise
 
-    # Eliminar categoría
+    # Eliminar categoría (con validacion HTTP 409)
     def eliminar_categoria(self, categoria_id: int):
 
         try:
@@ -103,10 +105,25 @@ class CategoriaService:
                     detail="Categoria no encontrada"
                 )
 
+            # Verificar si tiene productos activos asociados
+            productos_asociados = self.db.exec(
+                select(ProductoCategoria).where(
+                    ProductoCategoria.categoria_id == categoria_id
+                )
+            ).first()
+
+            if productos_asociados:
+                raise HTTPException(
+                    status_code=409,
+                    detail="No se puede eliminar la categoria porque tiene productos asociados"
+                )
+
             self.repo.delete(categoria)
 
             self.uow.commit()
 
+        except HTTPException:
+            raise
         except Exception as e:
             logger.exception(f"Error deleting categoria: {e}")
             self.uow.rollback()
