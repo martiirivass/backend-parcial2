@@ -1,30 +1,25 @@
 from sqlmodel import Session, select
 from app.models.categoria_model import Categoria
+from app.repositories.base import BaseRepository
 
 
-class CategoriaRepository:
+class CategoriaRepository(BaseRepository[Categoria]):
 
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(db, Categoria)
 
     def get_all(self):
-        statement = select(Categoria).where(Categoria.activo == True)
-        return self.db.exec(statement).all()
+        return self.db.exec(
+            select(Categoria).where(Categoria.activo == True)
+        ).all()
 
     def get_by_id(self, categoria_id: int):
-        statement = select(Categoria).where(
-            Categoria.id == categoria_id,
-            Categoria.activo == True
-        )
-        return self.db.exec(statement).first()
-
-    def create(self, categoria: Categoria):
-        self.db.add(categoria)
-        return categoria
-
-    def update(self, categoria: Categoria):
-        self.db.add(categoria)
-        return categoria
+        return self.db.exec(
+            select(Categoria).where(
+                Categoria.id == categoria_id,
+                Categoria.activo == True
+            )
+        ).first()
 
     def delete(self, categoria: Categoria):
         categoria.activo = False
