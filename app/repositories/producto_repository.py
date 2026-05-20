@@ -1,30 +1,25 @@
 from sqlmodel import Session, select
 from app.models.producto_model import Producto
+from app.repositories.base import BaseRepository
 
 
-class ProductoRepository:
+class ProductoRepository(BaseRepository[Producto]):
 
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(db, Producto)
 
     def get_all(self):
-        statement = select(Producto).where(Producto.activo == True)
-        return self.db.exec(statement).all()
+        return self.db.exec(
+            select(Producto).where(Producto.activo == True)
+        ).all()
 
     def get_by_id(self, producto_id: int):
-        statement = select(Producto).where(
-            Producto.id == producto_id,
-            Producto.activo == True
-        )
-        return self.db.exec(statement).first()
-
-    def create(self, producto: Producto):
-        self.db.add(producto)
-        return producto
-
-    def update(self, producto: Producto):
-        self.db.add(producto)
-        return producto
+        return self.db.exec(
+            select(Producto).where(
+                Producto.id == producto_id,
+                Producto.activo == True
+            )
+        ).first()
 
     def delete(self, producto: Producto):
         producto.activo = False
