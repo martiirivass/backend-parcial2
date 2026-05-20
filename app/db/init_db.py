@@ -15,6 +15,7 @@ from app.models.pedido_model import Pedido
 from app.models.detalle_pedido_model import DetallePedido
 from app.models.historial_estado_model import HistorialEstadoPedido
 from app.models.direccion_model import Direccion
+from app.models.usuario_rol_model import UsuarioRol
 
 def init_db():
     SQLModel.metadata.create_all(engine)

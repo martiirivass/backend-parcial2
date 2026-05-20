@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, Depends
-from typing import Annotated, Optional
+from typing import Annotated, List, Optional
 from sqlmodel import Session
 
 from app.db.database import get_session
@@ -7,7 +7,8 @@ from app.db.database import get_session
 from app.schemas.categoria_schema import (
     CategoriaCreate,
     CategoriaUpdate,
-    CategoriaRead
+    CategoriaRead,
+    CategoriaTree
 )
 
 from app.services.categoria_service import CategoriaService
@@ -42,6 +43,15 @@ def listar(
     service = CategoriaService(db)
 
     return service.listar_categorias(limit, offset, parent_id=parent_id)
+
+
+# Arbol de categorias (consulta recursiva)
+@router.get("/tree", response_model=List[CategoriaTree])
+def get_tree(
+    db: Session = Depends(get_session)
+):
+    service = CategoriaService(db)
+    return service.get_tree()
 
 
 # Obtener categoría (publico)

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from sqlmodel import SQLModel
 
 
@@ -6,7 +6,7 @@ class AdminUserUpdate(SQLModel):
     nombre: Optional[str] = None
     apellido: Optional[str] = None
     email: Optional[str] = None
-    rol_id: Optional[int] = None
+    rol_ids: Optional[List[int]] = None
 
 
 class AdminUserRead(SQLModel):
@@ -14,5 +14,4 @@ class AdminUserRead(SQLModel):
     nombre: str
     apellido: str
     email: str
-    rol_id: Optional[int] = None
     deleted_at: Optional[str] = None
