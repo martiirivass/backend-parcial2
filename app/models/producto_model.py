@@ -19,6 +19,8 @@ class Producto(SQLModel, table=True):
     nombre: str  #Campo obligatorio para el nombre del producto
     descripcion: Optional[str] = None #Campo opcional para la descripción del producto
     precio: float #Campo obligatorio para el precio del producto
+    stock_cantidad: int = Field(default=0) #Stock disponible
+    disponible: bool = Field(default=True) #Si esta disponible para la venta
     activo: bool = Field(default=True)
     
     # Relacion N:N con categorias
