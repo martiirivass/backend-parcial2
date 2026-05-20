@@ -1,6 +1,7 @@
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
+from app.models.producto_categoria_model import ProductoCategoria
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -28,5 +29,8 @@ class Categoria(SQLModel, table=True):
         back_populates="parent"
     )
 
-    # NUEVA RELACIÓN 1:N (Una categoría tiene muchos productos)
-    productos: List["Producto"] = Relationship(back_populates="categoria")
+    # NUEVA RELACIÓN N:N (Una categoría tiene muchos productos, un producto tiene muchas categorías)
+    productos: List["Producto"] = Relationship(
+        back_populates="categorias",
+        link_model=ProductoCategoria
+    )
