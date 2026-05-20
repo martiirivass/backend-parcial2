@@ -15,6 +15,7 @@ class Ingrediente(SQLModel, table=True):
     nombre: str
     descripcion: Optional[str] = None
     es_alergeno: bool = False
+    activo: bool = True
     
     deleted_at: Optional[datetime] = Field(default=None) # Soft Delete
     
