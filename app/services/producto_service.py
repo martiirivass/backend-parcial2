@@ -5,8 +5,8 @@ from fastapi import HTTPException
 
 from app.models.producto_model import Producto
 from app.repositories.producto_repository import ProductoRepository
-from app.repositories.category_repository import CategoriaRepository
-from app.repositories.ingredient_repository import IngredienteRepository
+from app.repositories.categoria_repository import CategoriaRepository
+from app.repositories.ingrediente_repository import IngredienteRepository
 from app.unit_of_work import UnitOfWork
 
 logger = logging.getLogger(__name__)

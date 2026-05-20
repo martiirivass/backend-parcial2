@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from app.models.category_model import Categoria
+from app.models.categoria_model import Categoria
 
 
 class CategoriaRepository:

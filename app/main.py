@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from app.db.init_db import init_db
 from app.routers.producto_router import router as producto
-from app.routers.category_router import router as categoria
-from app.routers.ingredient_router import router as ingrediente
+from app.routers.categoria_router import router as categoria
+from app.routers.ingrediente_router import router as ingrediente
 
 from fastapi.middleware.cors import CORSMiddleware
 

@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from app.models.ingredient_model import Ingrediente
+from app.models.ingrediente_model import Ingrediente
 
 
 class IngredienteRepository:

@@ -1,15 +1,15 @@
 from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship
-from app.models.producto_category_model import ProductoCategoria
-from app.models.producto_ingredient_model import ProductoIngrediente
+from app.models.producto_categoria_model import ProductoCategoria
+from app.models.producto_ingrediente_model import ProductoIngrediente
 
 # Evitar importaciones circulares
 # Estas importaciones solo se utilizan para tipado y no se ejecutan en tiempo de ejecución.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.ingredient_model import Ingrediente
-    from app.models.category_model import Categoria
+    from app.models.ingrediente_model import Ingrediente
+    from app.models.categoria_model import Categoria
     
 
 class Producto(SQLModel, table=True):

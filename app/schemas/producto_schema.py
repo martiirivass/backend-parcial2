@@ -4,8 +4,8 @@ from pydantic import field_validator #Validaciones personalizadas
 
 
 if TYPE_CHECKING:
-    from app.schemas.cat_schema import CategoriaRead
-    from app.schemas.ing_schema import IngredienteRead
+    from app.schemas.categoria_schema import CategoriaRead
+    from app.schemas.ingrediente_schema import IngredienteRead
 
 
 class ProductoBase(SQLModel):

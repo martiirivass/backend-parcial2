@@ -4,13 +4,13 @@ from sqlmodel import Session
 
 from app.db.database import get_session
 
-from app.schemas.ing_schema import (
+from app.schemas.ingrediente_schema import (
     IngredienteCreate,
     IngredienteUpdate,
     IngredienteRead
 )
 
-from app.services.ingredient_service import IngredienteService
+from app.services.ingrediente_service import IngredienteService
 
 router = APIRouter(
     prefix="/ingredientes",

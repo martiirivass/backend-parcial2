@@ -1,3 +1,3 @@
-from .category_repository import CategoriaRepository
+from .categoria_repository import CategoriaRepository
 from .producto_repository import ProductoRepository
-from .ingredient_repository import IngredienteRepository
+from .ingrediente_repository import IngredienteRepository

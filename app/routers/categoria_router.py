@@ -4,13 +4,13 @@ from sqlmodel import Session
 
 from app.db.database import get_session
 
-from app.schemas.cat_schema import (
+from app.schemas.categoria_schema import (
     CategoriaCreate,
     CategoriaUpdate,
     CategoriaRead
 )
 
-from app.services.category_service import CategoriaService
+from app.services.categoria_service import CategoriaService
 
 router = APIRouter(
     prefix="/categorias",

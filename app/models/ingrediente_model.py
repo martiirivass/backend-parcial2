@@ -1,6 +1,6 @@
 from typing import List, Optional
 from sqlmodel import SQLModel, Field, Relationship
-from app.models.producto_ingredient_model import ProductoIngrediente
+from app.models.producto_ingrediente_model import ProductoIngrediente
 
 # Evitar importaciones circulares
 from typing import TYPE_CHECKING

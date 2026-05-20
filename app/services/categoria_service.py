@@ -2,8 +2,8 @@ import logging
 
 from fastapi import HTTPException
 
-from app.models.category_model import Categoria
-from app.repositories.category_repository import CategoriaRepository
+from app.models.categoria_model import Categoria
+from app.repositories.categoria_repository import CategoriaRepository
 from app.unit_of_work import UnitOfWork
 
 logger = logging.getLogger(__name__)

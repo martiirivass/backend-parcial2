@@ -2,8 +2,8 @@ import logging
 
 from fastapi import HTTPException
 
-from app.models.ingredient_model import Ingrediente
-from app.repositories.ingredient_repository import IngredienteRepository
+from app.models.ingrediente_model import Ingrediente
+from app.repositories.ingrediente_repository import IngredienteRepository
 from app.unit_of_work import UnitOfWork
 
 logger = logging.getLogger(__name__)

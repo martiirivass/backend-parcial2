@@ -9,7 +9,7 @@ from app.auth.security import (
 
 from app.models.rol import Rol
 from app.models.usuario import Usuario
-from app.models.usuario_rol import UsuarioRol
+from app.models.usuarioRol import UsuarioRol
 
 
 def register_user(
