@@ -35,4 +35,8 @@ class CategoriaRead(CategoriaBase):
 #Para leer categorias con sus productos relacionados
 class CategoriaReadWithProductos(CategoriaRead):
     productos: List["ProductoRead"] = []
+
+#Para el arbol de categorias (consulta recursiva)
+class CategoriaTree(CategoriaRead):
+    subcategorias: List["CategoriaTree"] = []
     
