@@ -1,0 +1,113 @@
+import logging
+
+from fastapi import HTTPException
+
+from app.models.category_model import Categoria
+from app.repositories.category_repository import CategoriaRepository
+from app.unit_of_work import UnitOfWork
+
+logger = logging.getLogger(__name__)
+
+
+class CategoriaService:
+
+    def __init__(self, db):
+        self.db = db
+        self.repo = CategoriaRepository(db)
+        self.uow = UnitOfWork(db)
+
+    # Crear categoría
+    def crear_categoria(self, categoria_data):
+
+        try:
+
+            nueva_categoria = Categoria(
+                **categoria_data.model_dump()
+            )
+
+            self.repo.create(nueva_categoria)
+
+            self.uow.commit()
+            self.db.refresh(nueva_categoria)
+
+            return nueva_categoria
+
+        except Exception as e:
+            logger.exception(f"Error creating categoria: {e}")
+            self.uow.rollback()
+            raise
+
+    # Listar categorías
+    def listar_categorias(self, limit: int, offset: int):
+
+        categorias = self.repo.get_all()
+
+        return {
+            "data": categorias[offset: offset + limit],
+            "total": len(categorias)
+        }
+
+    # Obtener categoría por ID
+    def obtener_categoria(self, categoria_id: int):
+
+        categoria = self.repo.get_by_id(categoria_id)
+
+        if not categoria:
+            raise HTTPException(
+                status_code=404,
+                detail="Categoria no encontrada"
+            )
+
+        return categoria
+
+    # Actualizar categoría
+    def actualizar_categoria(self, categoria_id: int, datos):
+
+        try:
+
+            categoria = self.repo.get_by_id(categoria_id)
+
+            if not categoria:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Categoria no encontrada"
+                )
+
+            update_data = datos.model_dump(exclude_unset=True)
+
+            for key, value in update_data.items():
+                setattr(categoria, key, value)
+
+            self.repo.update(categoria)
+
+            self.uow.commit()
+            self.db.refresh(categoria)
+
+            return categoria
+
+        except Exception as e:
+            logger.exception(f"Error updating categoria: {e}")
+            self.uow.rollback()
+            raise
+
+    # Eliminar categoría
+    def eliminar_categoria(self, categoria_id: int):
+
+        try:
+
+            categoria = self.repo.get_by_id(categoria_id)
+
+            if not categoria:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Categoria no encontrada"
+                )
+
+            self.repo.delete(categoria)
+
+            self.uow.commit()
+
+        except Exception as e:
+            logger.exception(f"Error deleting categoria: {e}")
+            self.uow.rollback()
+            raise
