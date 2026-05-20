@@ -1,11 +1,11 @@
 from sqlmodel import Session, select
 from app.db.database import engine
-from app.models.category_model import Categoria
+from app.models.categoria_model import Categoria
 from app.models.producto_model import Producto
-from app.models.ingredient_model import Ingrediente
-from app.repositories.category_repository import CategoriaRepository
+from app.models.ingrediente_model import Ingrediente
+from app.repositories.categoria_repository import CategoriaRepository
 from app.repositories.producto_repository import ProductoRepository
-from app.repositories.ingredient_repository import IngredienteRepository
+from app.repositories.ingrediente_repository import IngredienteRepository
 from app.unit_of_work import UnitOfWork
 
 print("TEST: Soft Delete para TODAS las entidades\n")
