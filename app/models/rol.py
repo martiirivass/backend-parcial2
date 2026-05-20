@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -6,16 +6,8 @@ from sqlmodel import Field, Relationship, SQLModel
 class Rol(SQLModel, table=True):
     __tablename__ = "roles"
 
-    id: Optional[int] = Field(
-        default=None,
-        primary_key=True
-    )
+    id: Optional[int] = Field(default=None, primary_key=True)
+    codigo: str # ADMIN, STOCK, PEDIDOS, CLIENT
+    nombre: str
 
-    name: str = Field(
-        unique=True,
-        nullable=False
-    )
-
-    usuarios: list["Usuario"] = Relationship(
-        back_populates="rol"
-    )
+    usuarios: List["Usuario"] = Relationship(back_populates="rol")

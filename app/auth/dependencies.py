@@ -4,13 +4,20 @@ import jwt
 from fastapi import Cookie, Depends, HTTPException
 from sqlmodel import Session
 
-from app.auth.security import SECRET_KEY, ALGORITHM
+from app.auth.security import (
+    SECRET_KEY,
+    ALGORITHM
+)
+
 from app.db.database import get_session
 from app.models.usuario import Usuario
 
 
 def get_current_user(
-    access_token: Annotated[str | None, Cookie()] = None,
+    access_token: Annotated[
+        str | None,
+        Cookie()
+    ] = None,
     session: Session = Depends(get_session)
 ):
     if not access_token:

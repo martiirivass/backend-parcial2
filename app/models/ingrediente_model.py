@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
 from app.models.producto_ingrediente_model import ProductoIngrediente
 
@@ -14,7 +15,8 @@ class Ingrediente(SQLModel, table=True):
     nombre: str
     descripcion: Optional[str] = None
     es_alergeno: bool = False
-    activo: bool = Field(default=True)
+    
+    deleted_at: Optional[datetime] = Field(default=None) # Soft Delete
     
     # Relacion N:N con productos
     productos: List["Producto"] = Relationship(

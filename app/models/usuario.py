@@ -1,36 +1,19 @@
 from typing import Optional
-
+from datetime import datetime
 from sqlmodel import Field, Relationship, SQLModel
-
-from app.models.rol import Rol
 
 
 class Usuario(SQLModel, table=True):
     __tablename__ = "usuarios"
 
-    id: Optional[int] = Field(
-        default=None,
-        primary_key=True
-    )
+    id: Optional[int] = Field(default=None, primary_key=True)
+    nombre: str
+    apellido: str
+    email: str
+    password: str # Necesario para guardar el hash de bcrypt
+    
+    # Soft delete para gestión de usuarios
+    deleted_at: Optional[datetime] = Field(default=None)
 
-    firstname: str
-
-    lastname: str
-
-    email: str = Field(
-        unique=True,
-        index=True
-    )
-
-    password: str
-
-    is_active: bool = True
-
-    rol_id: Optional[int] = Field(
-        default=None,
-        foreign_key="roles.id"
-    )
-
-    rol: Optional[Rol] = Relationship(
-        back_populates="usuarios"
-    )
+    rol_id: Optional[int] = Field(default=None, foreign_key="roles.id")
+    rol: Optional["Rol"] = Relationship(back_populates="usuarios")
