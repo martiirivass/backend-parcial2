@@ -1,6 +1,12 @@
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from sqlmodel import Field, Relationship, SQLModel
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.pedido_model import Pedido
+    from app.models.direccion_model import Direccion
 
 
 class Usuario(SQLModel, table=True):
@@ -17,3 +23,6 @@ class Usuario(SQLModel, table=True):
 
     rol_id: Optional[int] = Field(default=None, foreign_key="roles.id")
     rol: Optional["Rol"] = Relationship(back_populates="usuarios")
+
+    pedidos: List["Pedido"] = Relationship(back_populates="usuario")
+    direcciones: List["Direccion"] = Relationship(back_populates="usuario")
