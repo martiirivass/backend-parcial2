@@ -3,9 +3,12 @@ import logging
 from fastapi import HTTPException
 from sqlmodel import select
 
+from fastapi import UploadFile
+
 from app.models.categoria_model import Categoria
 from app.models.producto_categoria_model import ProductoCategoria
 from app.repositories.categoria_repository import CategoriaRepository
+from app.services.imagen_service import guardar_imagen_categoria
 from app.unit_of_work import UnitOfWork
 
 logger = logging.getLogger(__name__)
@@ -63,6 +66,7 @@ class CategoriaService:
                         "id": cat.id,
                         "nombre": cat.nombre,
                         "descripcion": cat.descripcion,
+                        "imagen_url": cat.imagen_url,
                         "parent_id": cat.parent_id,
                         "subcategorias": _build_tree(cat.id)
                     }
@@ -111,6 +115,35 @@ class CategoriaService:
 
         except Exception as e:
             logger.exception(f"Error updating categoria: {e}")
+            self.uow.rollback()
+            raise
+
+    def subir_imagen(self, categoria_id: int, archivo: UploadFile):
+        try:
+            categoria = self.repo.get_by_id(categoria_id)
+
+            if not categoria:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Categoria no encontrada"
+                )
+
+            # Guardar imagen en disco y obtener URL
+            imagen_url = guardar_imagen_categoria(categoria_id, archivo)
+
+            # Actualizar campo en DB
+            categoria.imagen_url = imagen_url
+            self.repo.update(categoria)
+
+            self.uow.commit()
+            self.db.refresh(categoria)
+
+            return categoria
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error subiendo imagen de categoria: {e}")
             self.uow.rollback()
             raise
 

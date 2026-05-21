@@ -31,6 +31,7 @@ class CategoriaUpdate(SQLModel):
 class CategoriaRead(CategoriaBase):
     id: int
     parent_id: Optional[int] = None
+    imagen_url: Optional[str] = None
 
 #Para leer categorias con sus productos relacionados
 class CategoriaReadWithProductos(CategoriaRead):

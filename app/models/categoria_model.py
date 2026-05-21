@@ -18,6 +18,9 @@ class Categoria(SQLModel, table=True):
     #Soft Delete con TIMESTAMP
     deleted_at: Optional[datetime] = Field(default=None)
     
+    # Imagen de la categoría
+    imagen_url: Optional[str] = Field(default=None)
+
     # Relación recursiva para subcategorías
     parent_id: Optional[int] = Field(default=None, foreign_key="categorias.id")
 

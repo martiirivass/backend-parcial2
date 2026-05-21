@@ -1,10 +1,11 @@
 import logging
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 
 from app.models.producto_model import Producto
 from app.repositories.producto_repository import ProductoRepository
 from app.repositories.categoria_repository import CategoriaRepository
 from app.repositories.ingrediente_repository import IngredienteRepository
+from app.services.imagen_service import guardar_imagen
 from app.unit_of_work import UnitOfWork
 
 logger = logging.getLogger(__name__)
@@ -169,5 +170,34 @@ class ProductoService:
 
         except Exception as e:
             logger.exception(f"Error deleting producto: {e}")
+            self.uow.rollback()
+            raise
+
+    def subir_imagen(self, producto_id: int, archivo: UploadFile):
+        try:
+            producto = self.repo.get_by_id(producto_id)
+
+            if not producto:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Producto no encontrado"
+                )
+
+            # Guardar imagen en disco y obtener URL
+            imagen_url = guardar_imagen(producto_id, archivo)
+
+            # Actualizar campo en DB
+            producto.imagen_url = imagen_url
+            self.repo.update(producto)
+
+            self.uow.commit()
+            self.db.refresh(producto)
+
+            return producto
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error subiendo imagen: {e}")
             self.uow.rollback()
             raise
