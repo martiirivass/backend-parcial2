@@ -12,7 +12,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RolInfo(BaseModel):
+    id: int
+    codigo: str
+    nombre: str
+
 class UserResponse(BaseModel):
     id: int
     nombre: str
     email: str
+    roles: list[RolInfo] = []
