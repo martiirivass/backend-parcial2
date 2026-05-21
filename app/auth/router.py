@@ -64,3 +64,18 @@ def me(
     current_user: Usuario = Depends(get_current_user)
 ):
     return get_me(current_user)
+
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        secure=False,
+        httponly=True,
+        samesite="lax",
+    )
+
+    return {
+        "message": "Logout exitoso"
+    }
