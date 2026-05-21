@@ -12,6 +12,7 @@ class ProductoBase(SQLModel):
     nombre: str
     descripcion: Optional[str] = None
     precio: float
+    imagen_url: Optional[str] = None
     stock_cantidad: int = 0
     disponible: bool = True
 

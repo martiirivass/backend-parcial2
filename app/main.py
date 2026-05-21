@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
 from app.db.init_db import init_db
 from app.routers.producto_router import router as producto
 from app.routers.categoria_router import router as categoria
@@ -6,6 +10,7 @@ from app.routers.ingrediente_router import router as ingrediente
 from app.routers.pedido_router import router as pedido
 from app.routers.direccion_router import router as direccion
 from app.routers.admin_router import router as admin
+from app.routers.stats_router import router as stats
 from app.auth.router import router as auth_router
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +35,11 @@ app.add_middleware(
 def on_startup():
     init_db()
 
+# Montar archivos estáticos para imágenes subidas
+UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
+UPLOADS_DIR.mkdir(exist_ok=True)
+app.mount("/api/v1/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
 app.include_router(producto, prefix="/api/v1")
 app.include_router(categoria, prefix="/api/v1")
 app.include_router(ingrediente, prefix="/api/v1")
@@ -37,3 +47,4 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(pedido, prefix="/api/v1")
 app.include_router(direccion, prefix="/api/v1")
 app.include_router(admin, prefix="/api/v1")
+app.include_router(stats, prefix="/api/v1")

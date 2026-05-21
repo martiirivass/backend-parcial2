@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, UploadFile, File
 from typing import Annotated, List, Optional
 from sqlmodel import Session
 
@@ -88,3 +88,16 @@ def eliminar(
     service = CategoriaService(db)
 
     service.eliminar_categoria(categoria_id)
+
+
+# Subir imagen de categoría (solo ADMIN)
+@router.post("/{categoria_id}/imagen", response_model=CategoriaRead)
+def subir_imagen(
+    categoria_id: int,
+    archivo: UploadFile = File(...),
+    db: Session = Depends(get_session),
+    current_user = Depends(require_roles("ADMIN"))
+):
+    service = CategoriaService(db)
+
+    return service.subir_imagen(categoria_id, archivo)
