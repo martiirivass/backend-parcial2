@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from sqlmodel import Session, select
 from app.models.categoria_model import Categoria
@@ -10,7 +11,7 @@ class CategoriaRepository(BaseRepository[Categoria]):
         super().__init__(db, Categoria)
 
     def get_all(self, parent_id: Optional[int] = None):
-        statement = select(Categoria).where(Categoria.activo == True)
+        statement = select(Categoria).where(Categoria.deleted_at == None)
 
         if parent_id is not None:
             statement = statement.where(Categoria.parent_id == parent_id)
@@ -21,10 +22,10 @@ class CategoriaRepository(BaseRepository[Categoria]):
         return self.db.exec(
             select(Categoria).where(
                 Categoria.id == categoria_id,
-                Categoria.activo == True
+                Categoria.deleted_at == None
             )
         ).first()
 
     def delete(self, categoria: Categoria):
-        categoria.activo = False
+        categoria.deleted_at = datetime.now()
         self.db.add(categoria)

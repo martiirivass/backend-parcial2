@@ -1,15 +1,11 @@
-from typing import Optional, List
+from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models.usuario_rol_model import UsuarioRol
-
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from app.models.pedido_model import Pedido
-    from app.models.direccion_model import Direccion
-    from app.models.rol import Rol
+    from app.models.usuario_rol_model import UsuarioRol
+    from app.models.refresh_token_model import RefreshToken
+    from app.models.direccion_entrega_model import DireccionEntrega
 
 
 class Usuario(SQLModel, table=True):
@@ -20,19 +16,13 @@ class Usuario(SQLModel, table=True):
     apellido: str
     email: str
     password: str  # Hash de bcrypt
-    
-    # Soft delete para gestión de usuarios
+
+    # Soft delete
     deleted_at: Optional[datetime] = Field(default=None)
 
-    # Relacion N:N con roles (UsuarioRol)
-    roles: List["Rol"] = Relationship(
-        back_populates="usuarios",
-        link_model=UsuarioRol
-    )
+    # Relación N:N con roles a través de UsuarioRol
+    usuario_roles: List["UsuarioRol"] = Relationship(back_populates="usuario")
 
-    pedidos: List["Pedido"] = Relationship(back_populates="usuario")
-    direcciones: List["Direccion"] = Relationship(back_populates="usuario")
-
-    # Helper para saber si tiene un rol
-    def tiene_rol(self, codigo: str) -> bool:
-        return any(r.codigo == codigo for r in self.roles)
+    # Relaciones
+    refresh_tokens: List["RefreshToken"] = Relationship(back_populates="usuario")
+    direcciones: List["DireccionEntrega"] = Relationship(back_populates="usuario")
