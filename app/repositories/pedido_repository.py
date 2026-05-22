@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlmodel import Session, select
 from app.models.pedido_model import Pedido
 from app.repositories.base import BaseRepository
@@ -10,14 +11,14 @@ class PedidoRepository(BaseRepository[Pedido]):
 
     def get_all(self):
         return self.db.exec(
-            select(Pedido).where(Pedido.activo == True)
+            select(Pedido).where(Pedido.deleted_at == None)
         ).all()
 
     def get_by_id(self, pedido_id: int):
         return self.db.exec(
             select(Pedido).where(
                 Pedido.id == pedido_id,
-                Pedido.activo == True
+                Pedido.deleted_at == None
             )
         ).first()
 
@@ -25,10 +26,10 @@ class PedidoRepository(BaseRepository[Pedido]):
         return self.db.exec(
             select(Pedido).where(
                 Pedido.usuario_id == usuario_id,
-                Pedido.activo == True
+                Pedido.deleted_at == None
             )
         ).all()
 
     def delete(self, pedido: Pedido):
-        pedido.activo = False
+        pedido.deleted_at = datetime.now(timezone.utc)
         self.db.add(pedido)

@@ -5,7 +5,7 @@ from sqlmodel import Session
 from app.db.database import get_session
 from app.schemas.pedido_schema import (
     PedidoCreate,
-    PedidoReadWithDetalles,
+    PedidoReadWithDetails,
     AvanceEstadoRequest
 )
 from app.services.pedido_service import PedidoService
@@ -20,7 +20,7 @@ router = APIRouter(
 
 
 # Crear pedido (CLIENT)
-@router.post("/", response_model=PedidoReadWithDetalles, status_code=201)
+@router.post("/", response_model=PedidoReadWithDetails, status_code=201)
 def crear_pedido(
     datos: PedidoCreate,
     db: Session = Depends(get_session),
@@ -35,7 +35,7 @@ def crear_pedido(
 def listar_pedidos(
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
-    estado_id: Optional[int] = Query(None, description="Filtrar por estado"),
+    estado_codigo: Optional[str] = Query(None, description="Filtrar por estado"),
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(require_roles("CLIENT", "ADMIN", "PEDIDOS"))
 ):
@@ -45,12 +45,12 @@ def listar_pedidos(
         current_user.tiene_rol("CLIENT"),
         limit,
         offset,
-        estado_id=estado_id
+        estado_codigo=estado_codigo
     )
 
 
 # Obtener pedido por ID
-@router.get("/{pedido_id}", response_model=PedidoReadWithDetalles)
+@router.get("/{pedido_id}", response_model=PedidoReadWithDetails)
 def obtener_pedido(
     pedido_id: int,
     db: Session = Depends(get_session),
@@ -69,7 +69,7 @@ def avanzar_estado(
     current_user: Usuario = Depends(require_roles("ADMIN", "PEDIDOS"))
 ):
     service = PedidoService(db)
-    return service.avanzar_estado(pedido_id, datos.estado_id)
+    return service.avanzar_estado(pedido_id, datos.estado_codigo)
 
 
 # Cancelar pedido (CLIENT - solo los suyos)
