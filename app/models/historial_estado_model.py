@@ -14,7 +14,7 @@ class HistorialEstadoPedido(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     pedido_id: int = Field(foreign_key="pedidos.id")
-    estado_pedido_id: int = Field(foreign_key="estados_pedido.id")
+    estado_codigo: str = Field(foreign_key="estados_pedido.codigo", max_length=20)
     fecha: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     observacion: Optional[str] = None
 
