@@ -10,35 +10,7 @@ from app.auth.security import (
 
 from app.models.usuario import Usuario
 from app.models.rol import Rol
-
-
-def register_user(
-    nombre: str,
-    email: str,
-    password: str,
-    session: Session
-):
-    existing = session.exec(
-        select(Usuario).where(Usuario.email == email)
-    ).first()
-
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="El email ya está registrado"
-        )
-
-    user = Usuario(
-        nombre=nombre,
-        email=email,
-        password=hash_password(password)
-    )
-
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-
-    return user
+from app.models.usuario_rol_model import UsuarioRol
 
 
 def login_user(
@@ -60,7 +32,7 @@ def login_user(
 
     if not verify_password(
         password,
-        user.password
+        user.password_hash
     ):
         raise HTTPException(
             status_code=401,
@@ -107,11 +79,16 @@ def register_user(
         nombre=nombre,
         apellido="",  # Opcional por ahora
         email=email,
-        password=hash_password(password),
-        roles=[rol_cliente]  # Asigno el rol CLIENT por defecto
+        password_hash=hash_password(password),
     )
 
     session.add(user)
+    session.flush()
+
+    # Asigno el rol CLIENT por defecto via UsuarioRol
+    ur = UsuarioRol(usuario_id=user.id, rol_codigo=rol_cliente.codigo)
+    session.add(ur)
+
     session.commit()
     session.refresh(user)
 

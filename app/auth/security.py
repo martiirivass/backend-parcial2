@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta, UTC
 
 import jwt
@@ -26,6 +27,11 @@ def verify_password(
         plain_password,
         hashed_password
     )
+
+
+def hash_token(token: str) -> str:
+    """SHA-256 del token para almacenar como CHAR(64)."""
+    return hashlib.sha256(token.encode()).hexdigest()
 
 
 def create_access_token(data: dict):

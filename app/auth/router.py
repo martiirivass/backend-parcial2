@@ -3,7 +3,7 @@ from sqlmodel import Session
 
 from app.auth.schemas import LoginRequest, RegisterRequest, UserResponse
 from app.auth.services import login_user, register_user
-from app.auth.security import create_access_token, SECRET_KEY, ALGORITHM
+from app.auth.security import create_access_token, hash_token, SECRET_KEY, ALGORITHM
 from app.db.database import get_session
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.models.refresh_token_model import RefreshToken
@@ -47,11 +47,11 @@ def login(
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     usuario_id = int(payload.get("sub"))
 
-    # Creo refresh token
+    # Creo refresh token (almaceno SHA-256, devuelvo raw)
     refresh_token_str = secrets.token_urlsafe(64)
     refresh = RefreshToken(
         usuario_id=usuario_id,
-        token=refresh_token_str,
+        token_hash=hash_token(refresh_token_str),
         expires_at=datetime.now(UTC) + timedelta(days=7)
     )
     session.add(refresh)
@@ -90,7 +90,7 @@ def refresh(
         raise HTTPException(status_code=400, detail="Refresh token requerido")
 
     repo = RefreshTokenRepository(session)
-    stored = repo.get_valid_token(refresh_token_str)
+    stored = repo.get_valid_token(hash_token(refresh_token_str))
     if not stored:
         raise HTTPException(status_code=401, detail="Refresh token inválido o expirado")
 
@@ -101,10 +101,11 @@ def refresh(
     # Genero nuevo access token
     new_token = create_access_token({"sub": str(stored.usuario_id)})
 
-    # Genero nuevo refresh token
+    # Genero nuevo refresh token (hash SHA-256)
+    new_raw = secrets.token_urlsafe(64)
     new_refresh = RefreshToken(
         usuario_id=stored.usuario_id,
-        token=secrets.token_urlsafe(64),
+        token_hash=hash_token(new_raw),
         expires_at=datetime.now(UTC) + timedelta(days=7)
     )
     session.add(new_refresh)
@@ -120,7 +121,7 @@ def refresh(
     )
     response.set_cookie(
         key="refresh_token",
-        value=new_refresh.token,
+        value=new_raw,
         httponly=True,
         secure=False,
         samesite="lax",

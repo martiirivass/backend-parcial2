@@ -1,7 +1,8 @@
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, Column
+from sqlalchemy import ARRAY, Integer
 
 if TYPE_CHECKING:
     from app.models.pedido_model import Pedido
@@ -24,9 +25,11 @@ class DetallePedido(SQLModel, table=True):
     subtotal_snap: float = Field(default=0.0)
 
     # IDs de ingredientes removidos (ej: [3, 7])
-    personalizacion: Optional[str] = None  # INTEGER[] en JSON string
+    personalizacion: Optional[str] = Field(
+        default=None, sa_column=Column(ARRAY(Integer))
+    )
 
     # Solo created_at — fila inmutable (sin updated_at)
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     pedido: "Pedido" = Relationship(back_populates="detalles")
