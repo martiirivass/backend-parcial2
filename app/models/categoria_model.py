@@ -7,17 +7,21 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from app.models.producto_model import Producto
 
+
 class Categoria(SQLModel, table=True):
     __tablename__ = "categorias" 
     
     id: Optional[int] = Field(default=None, primary_key=True)
     nombre: str 
     descripcion: Optional[str] = None
-    activo: bool = True
 
-    #Soft Delete con TIMESTAMP
+    # Soft Delete
     deleted_at: Optional[datetime] = Field(default=None)
     
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
     # Imagen de la categoría
     imagen_url: Optional[str] = Field(default=None)
 
@@ -32,7 +36,7 @@ class Categoria(SQLModel, table=True):
         back_populates="parent"
     )
 
-    # NUEVA RELACIÓN N:N (Una categoría tiene muchos productos, un producto tiene muchas categorías)
+    # Relación N:N con productos a través de ProductoCategoria
     productos: List["Producto"] = Relationship(
         back_populates="categorias",
         link_model=ProductoCategoria

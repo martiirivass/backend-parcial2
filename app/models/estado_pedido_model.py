@@ -1,10 +1,11 @@
 from typing import Optional
-from sqlmodel import SQLModel, Field
+
+from sqlmodel import Field, SQLModel
 
 
 class EstadoPedido(SQLModel, table=True):
     __tablename__ = "estados_pedido"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    codigo: str  # PENDIENTE, CONFIRMADO, EN_PREP, EN_CAMINO, ENTREGADO, CANCELADO
-    nombre: str
+    codigo: str = Field(default=None, primary_key=True, max_length=20)
+    nombre: str = Field(max_length=50)
+    descripcion: Optional[str] = None

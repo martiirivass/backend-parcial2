@@ -1,7 +1,7 @@
-from typing import Optional
-from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, TYPE_CHECKING
+from datetime import datetime
 
-from typing import TYPE_CHECKING
+from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.models.pedido_model import Pedido
@@ -10,14 +10,23 @@ if TYPE_CHECKING:
 class DetallePedido(SQLModel, table=True):
     __tablename__ = "detalles_pedido"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    pedido_id: int = Field(foreign_key="pedidos.id")
-
-    # Snapshot Pattern: guardo el nombre y precio inmutables
-    producto_id: int = Field(foreign_key="productos.id")
-    nombre_producto: str  # Se guarda en el momento de crear el pedido
-    precio_unitario: float  # Se guarda en el momento de crear el pedido
+    pedido_id: Optional[int] = Field(
+        default=None, primary_key=True, foreign_key="pedidos.id"
+    )
+    producto_id: Optional[int] = Field(
+        default=None, primary_key=True, foreign_key="productos.id"
+    )
     cantidad: int = Field(default=1)
-    subtotal: float = Field(default=0.0)
+
+    # Snapshot (inmutable desde creación)
+    nombre_snapshot: str = Field(max_length=200)
+    precio_snapshot: float = Field(default=0.0)
+    subtotal_snap: float = Field(default=0.0)
+
+    # IDs de ingredientes removidos (ej: [3, 7])
+    personalizacion: Optional[str] = None  # INTEGER[] en JSON string
+
+    # Solo created_at — fila inmutable (sin updated_at)
+    created_at: datetime = Field(default_factory=datetime.now)
 
     pedido: "Pedido" = Relationship(back_populates="detalles")

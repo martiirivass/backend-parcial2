@@ -1,13 +1,12 @@
-from typing import Optional, List
-from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field, Relationship
+from typing import List, Optional, TYPE_CHECKING
+from datetime import datetime
 
-from typing import TYPE_CHECKING
+from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from app.models.usuario import Usuario
-    from app.models.estado_pedido_model import EstadoPedido
-    from app.models.forma_pago_model import FormaPago
+    from app.models.detalle_pedido_model import DetallePedido
+    from app.models.historial_estado_model import HistorialEstadoPedido
+    from app.models.pago_model import Pago
 
 
 class Pedido(SQLModel, table=True):
@@ -15,16 +14,32 @@ class Pedido(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id")
-    fecha: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    direccion_id: Optional[int] = Field(
+        default=None, foreign_key="direcciones_entrega.id"
+    )
+    estado_codigo: str = Field(
+        default="PENDIENTE", foreign_key="estados_pedido.codigo", max_length=20
+    )
+    forma_pago_codigo: str = Field(
+        foreign_key="formas_pago.codigo", max_length=20
+    )
+
+    # Snapshot monetario (inmutable desde creación)
+    subtotal: float = Field(default=0.0)
+    descuento: float = Field(default=0.0)
+    costo_envio: float = Field(default=50.0)
     total: float = Field(default=0.0)
-    estado_actual_id: int = Field(foreign_key="estados_pedido.id")
-    forma_pago_id: int = Field(foreign_key="formas_pago.id")
-    direccion_entrega_id: Optional[int] = Field(default=None, foreign_key="direcciones.id")
-    activo: bool = Field(default=True)
+
+    notas: Optional[str] = None
+
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    deleted_at: Optional[datetime] = Field(default=None)
 
     # Relaciones
-    usuario: "Usuario" = Relationship(back_populates="pedidos")
-    estado_actual: "EstadoPedido" = Relationship()
-    forma_pago: "FormaPago" = Relationship()
     detalles: List["DetallePedido"] = Relationship(back_populates="pedido")
-    historial_estados: List["HistorialEstadoPedido"] = Relationship(back_populates="pedido")
+    historial_estados: List["HistorialEstadoPedido"] = Relationship(
+        back_populates="pedido"
+    )
+    pagos: List["Pago"] = Relationship(back_populates="pedido")
