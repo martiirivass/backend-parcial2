@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlmodel import Session, select
 
 from app.auth.security import (
+    hash_password,
     verify_password,
     create_access_token,
     hash_password
@@ -9,6 +10,35 @@ from app.auth.security import (
 
 from app.models.usuario import Usuario
 from app.models.rol import Rol
+
+
+def register_user(
+    nombre: str,
+    email: str,
+    password: str,
+    session: Session
+):
+    existing = session.exec(
+        select(Usuario).where(Usuario.email == email)
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="El email ya está registrado"
+        )
+
+    user = Usuario(
+        nombre=nombre,
+        email=email,
+        password=hash_password(password)
+    )
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    return user
 
 
 def login_user(

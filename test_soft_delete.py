@@ -40,7 +40,7 @@ try:
         
         if cat_en_bd:
             print(f"   [OK] SI existe en BD (fisicamente)")
-            print(f"   - activo: {cat_en_bd.activo}")
+            print(f"   - deleted_at: {cat_en_bd.deleted_at}")
             print(f"   - nombre: {cat_en_bd.nombre}\n")
         else:
             print(f"   [FAIL] NO existe en BD (fue borrada fisicamente)\n")
@@ -80,7 +80,7 @@ try:
         
         if ing_en_bd:
             print(f"   [OK] SI existe en BD (fisicamente)")
-            print(f"   - activo: {ing_en_bd.activo}")
+            print(f"   - deleted_at: {ing_en_bd.deleted_at}")
             print(f"   - nombre: {ing_en_bd.nombre}\n")
         else:
             print(f"   [FAIL] NO existe en BD (fue borrada fisicamente)\n")
