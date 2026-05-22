@@ -23,24 +23,17 @@ class StatsService:
     def __init__(self, db: Session):
         self.db = db
 
-    def _get_estado_id(self, codigo: str) -> int:
-        """Obtiene el ID de un estado de pedido por su código."""
-        estado = self.db.exec(
-            select(EstadoPedido).where(EstadoPedido.codigo == codigo)
-        ).first()
-        return estado.id if estado else 0
-
     def get_resumen(self) -> ResumenStats:
         """Calcula las métricas de resumen del dashboard."""
-        estado_entregado_id = self._get_estado_id("ENTREGADO")
-        estado_pendiente_id = self._get_estado_id("PENDIENTE")
+        estado_entregado_codigo = "ENTREGADO"
+        estado_pendiente_codigo = "PENDIENTE"
         hoy = date.today()
         hace_30_dias = hoy - timedelta(days=30)
 
         # Ventas totales (suma de totales de pedidos ENTREGADOS)
         ventas_totales = self.db.exec(
             select(func.coalesce(func.sum(Pedido.total), 0.0)).where(
-                Pedido.estado_actual_id == estado_entregado_id,
+                Pedido.estado_codigo == estado_entregado_codigo,
                 Pedido.deleted_at == None,
             )
         ).one()
@@ -50,8 +43,8 @@ class StatsService:
         fin_hoy = inicio_hoy + timedelta(days=1)
         pedidos_hoy = self.db.exec(
             select(func.count(Pedido.id)).where(
-                Pedido.fecha >= inicio_hoy,
-                Pedido.fecha < fin_hoy,
+                Pedido.created_at >= inicio_hoy,
+                Pedido.created_at < fin_hoy,
                 Pedido.deleted_at == None,
             )
         ).one()
@@ -60,13 +53,14 @@ class StatsService:
         clientes_nuevos = self.db.exec(
             select(func.count(Usuario.id)).where(
                 Usuario.deleted_at == None,
+                Usuario.created_at >= hace_30_dias,
             )
         ).one()
 
         # Pedidos pendientes
         pedidos_pendientes = self.db.exec(
             select(func.count(Pedido.id)).where(
-                Pedido.estado_actual_id == estado_pendiente_id,
+                Pedido.estado_codigo == estado_pendiente_codigo,
                 Pedido.deleted_at == None,
             )
         ).one()
@@ -80,7 +74,7 @@ class StatsService:
 
     def get_ventas_semanales(self) -> VentasSemanalesResponse:
         """Ventas agregadas por día de los últimos 7 días."""
-        estado_entregado_id = self._get_estado_id("ENTREGADO")
+        estado_entregado_codigo = "ENTREGADO"
         hoy = date.today()
         hace_7_dias = hoy - timedelta(days=6)
 
@@ -92,17 +86,17 @@ class StatsService:
         # Ventas por día desde la DB
         ventas_db = self.db.exec(
             select(
-                func.date(Pedido.fecha).label("fecha"),
+                func.date(Pedido.created_at).label("fecha"),
                 func.coalesce(func.sum(Pedido.total), 0.0).label("total"),
                 func.count(Pedido.id).label("cantidad"),
             ).where(
-                Pedido.estado_actual_id == estado_entregado_id,
-                Pedido.fecha >= inicio_semana,
+                Pedido.estado_codigo == estado_entregado_codigo,
+                Pedido.created_at >= inicio_semana,
                 Pedido.deleted_at == None,
             ).group_by(
-                func.date(Pedido.fecha)
+                func.date(Pedido.created_at)
             ).order_by(
-                func.date(Pedido.fecha)
+                func.date(Pedido.created_at)
             )
         ).all()
 
@@ -127,11 +121,11 @@ class StatsService:
 
     def get_productos_mas_vendidos(self, limit: int = 10) -> ProductosMasVendidosResponse:
         """Top productos más vendidos con cantidad e ingreso total."""
-        estado_entregado_id = self._get_estado_id("ENTREGADO")
+        estado_entregado_codigo = "ENTREGADO"
 
         # Subquery: IDs de pedidos ENTREGADOS
         pedidos_entregados = select(Pedido.id).where(
-            Pedido.estado_actual_id == estado_entregado_id,
+            Pedido.estado_codigo == estado_entregado_codigo,
             Pedido.deleted_at == None,
         ).subquery()
 
@@ -139,14 +133,14 @@ class StatsService:
         resultados = self.db.exec(
             select(
                 DetallePedido.producto_id,
-                DetallePedido.nombre_producto,
+                DetallePedido.nombre_snapshot,
                 func.coalesce(func.sum(DetallePedido.cantidad), 0).label("total_vendido"),
-                func.coalesce(func.sum(DetallePedido.subtotal), 0.0).label("ingreso_total"),
+                func.coalesce(func.sum(DetallePedido.subtotal_snap), 0.0).label("ingreso_total"),
             ).where(
                 DetallePedido.pedido_id.in_(select(pedidos_entregados.c.id)),
             ).group_by(
                 DetallePedido.producto_id,
-                DetallePedido.nombre_producto,
+                DetallePedido.nombre_snapshot,
             ).order_by(
                 text("total_vendido DESC")
             ).limit(limit)
@@ -155,7 +149,7 @@ class StatsService:
         data = [
             ProductoMasVendido(
                 producto_id=row.producto_id,
-                nombre=row.nombre_producto,
+                nombre=row.nombre_snapshot,
                 total_vendido=int(row.total_vendido),
                 ingreso_total=float(row.ingreso_total),
             )

@@ -21,16 +21,16 @@ router = APIRouter(
 def listar_usuarios(
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
-    rol_id: Optional[int] = Query(None, description="Filtrar por rol"),
+    rol_codigo: Optional[str] = Query(None, description="Filtrar por rol"),
     db: Session = Depends(get_session),
     current_user = Depends(require_roles("ADMIN"))
 ):
     statement = select(Usuario)
 
     # Filtro por rol via tabla intermedia
-    if rol_id is not None:
+    if rol_codigo is not None:
         statement = statement.join(UsuarioRol).where(
-            UsuarioRol.rol_id == rol_id
+            UsuarioRol.rol_codigo == rol_codigo
         )
 
     usuarios = db.exec(statement).all()
@@ -77,6 +77,8 @@ def actualizar_usuario(
                 roles.append(rol)
         usuario.roles = roles
         del update_data["rol_ids"]
+        # Refresh the session to persist relationship changes
+        db.flush()
 
     # Actualizo el resto de los campos
     for key, value in update_data.items():

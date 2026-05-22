@@ -4,5 +4,5 @@ from sqlmodel import SQLModel
 
 class FormaPagoRead(SQLModel):
     codigo: str
-    nombre: str
-    descripcion: Optional[str] = None
+    descripcion: str
+    habilitado: bool

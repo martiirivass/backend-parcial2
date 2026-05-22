@@ -6,7 +6,7 @@ class AdminUserUpdate(SQLModel):
     nombre: Optional[str] = None
     apellido: Optional[str] = None
     email: Optional[str] = None
-    rol_ids: Optional[List[int]] = None
+    rol_ids: Optional[List[str]] = None
 
 
 class AdminUserRead(SQLModel):

@@ -4,8 +4,8 @@ from sqlmodel import SQLModel
 
 class UnidadMedidaBase(SQLModel):
     nombre: str
-    abreviatura: str
-    descripcion: Optional[str] = None
+    simbolo: str
+    tipo: str  # masa, volumen, unidad, area
 
 
 class UnidadMedidaCreate(UnidadMedidaBase):
@@ -14,8 +14,8 @@ class UnidadMedidaCreate(UnidadMedidaBase):
 
 class UnidadMedidaUpdate(SQLModel):
     nombre: Optional[str] = None
-    abreviatura: Optional[str] = None
-    descripcion: Optional[str] = None
+    simbolo: Optional[str] = None
+    tipo: Optional[str] = None
 
 
 class UnidadMedidaRead(UnidadMedidaBase):

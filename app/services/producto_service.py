@@ -69,15 +69,18 @@ class ProductoService:
 
     def listar_productos(self, limit, offset, categoria_id=None, disponible=None, q=None):
 
-        productos = self.repo.get_all_filtered(
+        productos_raw = self.repo.get_all_filtered(
             categoria_id=categoria_id,
             disponible=disponible,
             q=q
         )
 
+        from app.schemas.producto_schema import ProductoReadWithRelations
+        data = [ProductoReadWithRelations.model_validate(p) for p in productos_raw[offset: offset + limit]]
+
         return {
-            "data": productos[offset: offset + limit],
-            "total": len(productos)
+            "data": data,
+            "total": len(productos_raw)
         }
 
     def actualizar_disponibilidad(self, producto_id, datos):
