@@ -47,13 +47,13 @@ def seed_roles(session):
 
 def seed_unidades_medida(session):
     unidades_data = [
-        {"nombre": "Kilogramo", "abreviatura": "kg", "descripcion": "Unidad de masa"},
-        {"nombre": "Gramo", "abreviatura": "g", "descripcion": "Unidad de masa"},
-        {"nombre": "Litro", "abreviatura": "L", "descripcion": "Unidad de volumen"},
-        {"nombre": "Mililitro", "abreviatura": "mL", "descripcion": "Unidad de volumen"},
-        {"nombre": "Unidad", "abreviatura": "unid", "descripcion": "Por pieza"},
-        {"nombre": "Docena", "abreviatura": "doc", "descripcion": "12 unidades"},
-        {"nombre": "Pack", "abreviatura": "pack", "descripcion": "Paquete multiple"},
+        {"nombre": "Kilogramo", "simbolo": "kg", "tipo": "masa"},
+        {"nombre": "Gramo", "simbolo": "g", "tipo": "masa"},
+        {"nombre": "Litro", "simbolo": "L", "tipo": "volumen"},
+        {"nombre": "Mililitro", "simbolo": "mL", "tipo": "volumen"},
+        {"nombre": "Unidad", "simbolo": "u", "tipo": "unidad"},
+        {"nombre": "Docena", "simbolo": "doc", "tipo": "unidad"},
+        {"nombre": "Metro cuadrado", "simbolo": "m²", "tipo": "area"},
     ]
 
     for u in unidades_data:
@@ -62,19 +62,19 @@ def seed_unidades_medida(session):
         ).first()
         if not existe:
             session.add(UnidadMedida(**u))
-            print(f"  Unidad creada: {u['nombre']} ({u['abreviatura']})")
+            print(f"  Unidad creada: {u['nombre']} ({u['simbolo']})")
         else:
             print(f"  Unidad ya existe: {u['nombre']}")
 
 
 def seed_estados_pedido(session):
     estados_data = [
-        {"codigo": "PENDIENTE", "nombre": "Pendiente"},
-        {"codigo": "CONFIRMADO", "nombre": "Confirmado"},
-        {"codigo": "EN_PREP", "nombre": "En Preparacion"},
-        {"codigo": "EN_CAMINO", "nombre": "En Camino"},
-        {"codigo": "ENTREGADO", "nombre": "Entregado"},
-        {"codigo": "CANCELADO", "nombre": "Cancelado"},
+        {"codigo": "PENDIENTE", "descripcion": "Pedido creado, esperando confirmacion", "orden": 1, "es_terminal": False},
+        {"codigo": "CONFIRMADO", "descripcion": "Pedido confirmado, en proceso de preparacion", "orden": 2, "es_terminal": False},
+        {"codigo": "EN_PREP", "descripcion": "Pedido siendo preparado", "orden": 3, "es_terminal": False},
+        {"codigo": "EN_CAMINO", "descripcion": "Pedido en camino al destino", "orden": 4, "es_terminal": False},
+        {"codigo": "ENTREGADO", "descripcion": "Pedido entregado al cliente", "orden": 5, "es_terminal": True},
+        {"codigo": "CANCELADO", "descripcion": "Pedido cancelado", "orden": 6, "es_terminal": True},
     ]
 
     for e in estados_data:
@@ -90,9 +90,9 @@ def seed_estados_pedido(session):
 
 def seed_formas_pago(session):
     formas_data = [
-        {"codigo": "EFECTIVO", "nombre": "Efectivo", "descripcion": "Pago en efectivo al recibir"},
-        {"codigo": "TARJETA", "nombre": "Tarjeta", "descripcion": "Debito o credito"},
-        {"codigo": "TRANSFERENCIA", "nombre": "Transferencia", "descripcion": "Transferencia bancaria"},
+        {"codigo": "EFECTIVO", "descripcion": "Pago en efectivo al recibir", "habilitado": True},
+        {"codigo": "TARJETA", "descripcion": "Debito o credito", "habilitado": True},
+        {"codigo": "TRANSFERENCIA", "descripcion": "Transferencia bancaria", "habilitado": True},
     ]
 
     for f in formas_data:
@@ -126,7 +126,7 @@ def seed_admin(session):
             nombre="Admin",
             apellido="Sistema",
             email="admin@admin.com",
-            password=hash_password("admin123"),
+            password_hash=hash_password("admin123"),
         )
         session.add(admin)
         session.flush()
@@ -200,11 +200,11 @@ def seed_categorias_ingredientes(session):
 
 def seed_productos_ejemplo(session):
     # Busco unidades de medida
-    kg = session.exec(select(UnidadMedida).where(UnidadMedida.abreviatura == "kg")).first()
-    g = session.exec(select(UnidadMedida).where(UnidadMedida.abreviatura == "g")).first()
-    L = session.exec(select(UnidadMedida).where(UnidadMedida.abreviatura == "L")).first()
-    mL = session.exec(select(UnidadMedida).where(UnidadMedida.abreviatura == "mL")).first()
-    unid = session.exec(select(UnidadMedida).where(UnidadMedida.abreviatura == "unid")).first()
+    kg = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "kg")).first()
+    g = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "g")).first()
+    L = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "L")).first()
+    mL = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "mL")).first()
+    unid = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "u")).first()
 
     # Busco ingredientes por nombre
     ing = {}

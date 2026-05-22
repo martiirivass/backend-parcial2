@@ -39,12 +39,13 @@ class PedidoService:
             raise HTTPException(status_code=500, detail=f"Estado {codigo} no encontrado")
         return estado
 
-    def _crear_historial(self, pedido_id, estado_anterior, estado_nuevo, usuario_id):
+    def _crear_historial(self, pedido_id, estado_desde, estado_hacia, usuario_id, motivo=None):
         historial = HistorialEstadoPedido(
             pedido_id=pedido_id,
-            estado_anterior=estado_anterior,
-            estado_nuevo=estado_nuevo,
+            estado_desde=estado_desde,
+            estado_hacia=estado_hacia,
             usuario_id=usuario_id,
+            motivo=motivo,
         )
         self.db.add(historial)
         return historial

@@ -25,7 +25,7 @@ from app.repositories.pedido_repository import PedidoRepository
 from app.repositories.pago_repository import PagoRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.unit_of_work import UnitOfWork
-from app.auth.security import hash_password, verify_password, create_access_token
+from app.auth.security import hash_password, hash_token, verify_password, create_access_token
 from app.auth.services import register_user
 from datetime import datetime, timezone
 
@@ -110,8 +110,8 @@ try:
     # ============================================================
     print("\n📦 4. USUARIOS — Register y Password")
     # ============================================================
-    check("Hash password funciona", verify_password("admin123", admin.password) if admin else False)
-    check("Hash password rechaza incorrecta", not verify_password("wrong", admin.password) if admin else False)
+    check("Hash password funciona", verify_password("admin123", admin.password_hash) if admin else False)
+    check("Hash password rechaza incorrecta", not verify_password("wrong", admin.password_hash) if admin else False)
 
     # ============================================================
     print("\n📦 5. REPOSITORIOS — CRUD basico")
@@ -195,7 +195,7 @@ try:
             ).all()
             check("HistorialEstado creado (PENDIENTE)", len(historial) >= 1)
             if len(historial) > 0:
-                check("Historial: estado_nuevo correcto", historial[0].estado_nuevo == "PENDIENTE")
+                check("Historial: estado_hacia correcto", historial[0].estado_hacia == "PENDIENTE")
 
             # Avanzo estado
             pedido_avanzado = ps.avanzar_estado(pedido_creado.id, "CONFIRMADO", cliente.id)
@@ -282,22 +282,23 @@ try:
         import secrets
         from datetime import timedelta
 
+        raw_token = secrets.token_urlsafe(64)
         rt = RefreshToken(
             usuario_id=admin.id,
-            token=secrets.token_urlsafe(64),
+            token_hash=hash_token(raw_token),
             expires_at=datetime.now(timezone.utc) + timedelta(days=7)
         )
         db.add(rt)
         db.commit()
 
-        valido = repo_rt.get_valid_token(rt.token)
+        valido = repo_rt.get_valid_token(hash_token(raw_token))
         check("RefreshTokenRepository: token valido encontrado", valido is not None)
         check("RefreshTokenRepository: token pertenece al admin", valido.usuario_id == admin.id if valido else False)
 
         # Revoco
         repo_rt.revoke_user_tokens(admin.id)
         db.commit()
-        invalido = repo_rt.get_valid_token(rt.token)
+        invalido = repo_rt.get_valid_token(hash_token(raw_token))
         check("RefreshTokenRepository: token revocado no es valido", invalido is None)
 
     # ============================================================
