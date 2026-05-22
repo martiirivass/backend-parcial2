@@ -5,7 +5,7 @@ from sqlmodel import Field, Relationship, SQLModel
 if TYPE_CHECKING:
     from app.models.usuario_rol_model import UsuarioRol
     from app.models.refresh_token_model import RefreshToken
-    from app.models.direccion_entrega_model import DireccionEntrega
+    from app.models.direccion_model import Direccion
 
 
 class Usuario(SQLModel, table=True):
@@ -25,4 +25,11 @@ class Usuario(SQLModel, table=True):
 
     # Relaciones
     refresh_tokens: List["RefreshToken"] = Relationship(back_populates="usuario")
-    direcciones: List["DireccionEntrega"] = Relationship(back_populates="usuario")
+    direcciones: List["Direccion"] = Relationship(back_populates="usuario")
+
+    @property
+    def roles(self):
+        return [ur.rol for ur in self.usuario_roles] if self.usuario_roles else []
+
+    def tiene_rol(self, codigo: str) -> bool:
+        return any(r.codigo == codigo for r in self.roles)
