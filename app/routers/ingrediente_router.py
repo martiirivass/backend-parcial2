@@ -11,6 +11,7 @@ from app.schemas.ingrediente_schema import (
 )
 
 from app.services.ingrediente_service import IngredienteService
+from app.auth.permissions import require_roles
 
 router = APIRouter(
     prefix="/ingredientes",
@@ -18,11 +19,12 @@ router = APIRouter(
 )
 
 
-# Crear ingrediente
+# Crear ingrediente (ADMIN, STOCK)
 @router.post("/", response_model=IngredienteRead, status_code=201)
 def crear(
     ingrediente: IngredienteCreate,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user = Depends(require_roles("ADMIN", "STOCK"))
 ):
     service = IngredienteService(db)
 
@@ -52,23 +54,25 @@ def obtener(
     return service.obtener_ingrediente(ingrediente_id)
 
 
-# Actualizar ingrediente
+# Actualizar ingrediente (ADMIN, STOCK)
 @router.put("/{ingrediente_id}", response_model=IngredienteRead)
 def actualizar(
     ingrediente_id: int,
     datos: IngredienteUpdate,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user = Depends(require_roles("ADMIN", "STOCK"))
 ):
     service = IngredienteService(db)
 
     return service.actualizar_ingrediente(ingrediente_id, datos)
 
 
-# Eliminar ingrediente
+# Eliminar ingrediente (ADMIN)
 @router.delete("/{ingrediente_id}", status_code=204)
 def eliminar(
     ingrediente_id: int,
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    current_user = Depends(require_roles("ADMIN"))
 ):
     service = IngredienteService(db)
 

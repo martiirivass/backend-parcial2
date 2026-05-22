@@ -16,9 +16,10 @@ class Ingrediente(SQLModel, table=True):
     descripcion: Optional[str] = None
     es_alergeno: bool = Field(default=False)
 
-    # Timestamps
+    # Timestamps y soft delete
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    deleted_at: Optional[datetime] = Field(default=None)
     
     # Relacion N:N con productos
     productos: List["Producto"] = Relationship(

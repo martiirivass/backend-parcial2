@@ -7,6 +7,8 @@ from app.auth.security import create_access_token, hash_token, SECRET_KEY, ALGOR
 from app.db.database import get_session
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.models.refresh_token_model import RefreshToken
+from app.auth.dependencies import get_current_user
+from app.models.usuario import Usuario
 from datetime import datetime, timedelta, UTC
 import secrets
 import jwt
@@ -131,3 +133,27 @@ def refresh(
     return {
         "message": "Token renovado exitosamente"
     }
+
+
+@router.get("/me")
+def me(
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Devuelve los datos del usuario autenticado."""
+    return {
+        "id": current_user.id,
+        "nombre": current_user.nombre,
+        "email": current_user.email,
+        "roles": [
+            {"codigo": ur.rol.codigo, "nombre": ur.rol.nombre}
+            for ur in current_user.usuario_roles
+        ]
+    }
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """Limpia las cookies de autenticación."""
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return {"message": "Sesión cerrada"}

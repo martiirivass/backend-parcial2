@@ -4,5 +4,6 @@ from sqlmodel import SQLModel
 
 class EstadoPedidoRead(SQLModel):
     codigo: str
-    nombre: str
-    descripcion: Optional[str] = None
+    descripcion: str
+    orden: int
+    es_terminal: bool

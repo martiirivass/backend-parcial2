@@ -5,31 +5,42 @@ from pydantic import field_validator
 
 
 class DireccionEntregaCreate(SQLModel):
-    calle: str
+    alias: Optional[str] = None
+    linea1: str
+    linea2: Optional[str] = None
     ciudad: str
+    provincia: Optional[str] = None
     codigo_postal: Optional[str] = None
-    pais: str = "Argentina"
+    es_principal: bool = False
 
-    @field_validator("calle")
-    def validar_calle(cls, v):
+    @field_validator("linea1")
+    def validar_linea1(cls, v):
         if not v.strip():
-            raise ValueError("La calle no puede estar vacia")
+            raise ValueError("La direccion no puede estar vacia")
         return v
 
 
 class DireccionEntregaUpdate(SQLModel):
-    calle: Optional[str] = None
+    alias: Optional[str] = None
+    linea1: Optional[str] = None
+    linea2: Optional[str] = None
     ciudad: Optional[str] = None
+    provincia: Optional[str] = None
     codigo_postal: Optional[str] = None
-    pais: Optional[str] = None
+    es_principal: Optional[bool] = None
 
 
 class DireccionEntregaRead(SQLModel):
     id: int
     usuario_id: int
-    calle: str
+    alias: Optional[str] = None
+    linea1: str
+    linea2: Optional[str] = None
     ciudad: str
+    provincia: Optional[str] = None
     codigo_postal: Optional[str] = None
-    pais: str
+    es_principal: bool
+    latitud: Optional[float] = None
+    longitud: Optional[float] = None
     created_at: datetime
     updated_at: datetime

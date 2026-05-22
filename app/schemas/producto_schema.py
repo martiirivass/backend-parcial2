@@ -61,6 +61,8 @@ class ProductoUpdate(SQLModel):
 
 class ProductoRead(ProductoBase):
     id: int
+    precio: float  # alias via @property del modelo
+    imagen_url: Optional[str] = None  # alias via @property del modelo
 
 
 class ProductoReadWithRelations(ProductoRead):
