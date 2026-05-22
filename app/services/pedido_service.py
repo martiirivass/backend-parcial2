@@ -39,11 +39,12 @@ class PedidoService:
             raise HTTPException(status_code=500, detail=f"Estado {codigo} no encontrado")
         return estado
 
-    def _crear_historial(self, pedido_id, estado_codigo, observacion=None):
+    def _crear_historial(self, pedido_id, estado_anterior, estado_nuevo, usuario_id):
         historial = HistorialEstadoPedido(
             pedido_id=pedido_id,
-            estado_codigo=estado_codigo,
-            observacion=observacion
+            estado_anterior=estado_anterior,
+            estado_nuevo=estado_nuevo,
+            usuario_id=usuario_id,
         )
         self.db.add(historial)
         return historial
@@ -62,14 +63,14 @@ class PedidoService:
                         detail=f"Producto ID {item.producto_id} no encontrado"
                     )
 
-                item_subtotal = producto.precio * item.cantidad
+                item_subtotal = producto.precio_base * item.cantidad
                 subtotal += item_subtotal
 
                 detalle = DetallePedido(
                     producto_id=producto.id,
                     cantidad=item.cantidad,
                     nombre_snapshot=producto.nombre,
-                    precio_snapshot=producto.precio,
+                    precio_snapshot=producto.precio_base,
                     subtotal_snap=item_subtotal
                 )
                 detalles.append(detalle)
@@ -98,8 +99,9 @@ class PedidoService:
             # Audit trail: estado inicial
             self._crear_historial(
                 pedido.id,
+                None,
                 "PENDIENTE",
-                "Pedido creado"
+                usuario_id
             )
 
             self.uow.commit()
@@ -115,7 +117,7 @@ class PedidoService:
             self.uow.rollback()
             raise
 
-    def avanzar_estado(self, pedido_id, nuevo_estado_codigo):
+    def avanzar_estado(self, pedido_id, nuevo_estado_codigo, usuario_id):
         try:
             pedido = self.repo.get_by_id(pedido_id)
             if not pedido:
@@ -139,8 +141,9 @@ class PedidoService:
             # Audit trail append-only
             self._crear_historial(
                 pedido.id,
+                estado_actual.codigo,
                 nuevo_estado.codigo,
-                f"Cambio de {estado_actual.codigo} a {nuevo_estado.codigo}"
+                usuario_id
             )
 
             self.uow.commit()
@@ -182,8 +185,9 @@ class PedidoService:
 
             self._crear_historial(
                 pedido.id,
+                estado_actual.codigo,
                 "CANCELADO",
-                "Cancelado por el cliente"
+                usuario_id
             )
 
             self.uow.commit()
@@ -232,7 +236,7 @@ class PedidoService:
         historial = self.db.exec(
             select(HistorialEstadoPedido)
             .where(HistorialEstadoPedido.pedido_id == pedido_id)
-            .order_by(HistorialEstadoPedido.fecha)
+            .order_by(HistorialEstadoPedido.created_at)
         ).all()
 
         return historial

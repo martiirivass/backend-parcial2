@@ -17,7 +17,7 @@ from app.models.pedido_model import Pedido
 from app.models.detalle_pedido_model import DetallePedido
 from app.models.historial_estado_model import HistorialEstadoPedido
 from app.models.pago_model import Pago
-from app.models.direccion_model import Direccion
+from app.models.direccion_entrega_model import DireccionEntrega
 from app.models.refresh_token_model import RefreshToken
 
 

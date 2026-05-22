@@ -226,10 +226,10 @@ def seed_productos_ejemplo(session):
         {
             "nombre": "Clasica Burger",
             "descripcion": "Carne de res 200g, queso cheddar, lechuga, tomate y pan artesanal",
-            "precio": 8500.0,
+            "precio_base": 8500.0,
             "stock_cantidad": 50,
             "disponible": True,
-            "imagen_url": None,
+            "imagenes_url": None,
             "categoria": "Hamburguesas",
             "ingredientes": [
                 (ing["Carne de res"], 1, unid, False),
@@ -242,10 +242,10 @@ def seed_productos_ejemplo(session):
         {
             "nombre": "Bacon Cheese Burger",
             "descripcion": "Carne de res, panceta crocante, queso cheddar, cebolla morada",
-            "precio": 10500.0,
+            "precio_base": 10500.0,
             "stock_cantidad": 30,
             "disponible": True,
-            "imagen_url": None,
+            "imagenes_url": None,
             "categoria": "Hamburguesas",
             "ingredientes": [
                 (ing["Carne de res"], 1, unid, False),
@@ -258,10 +258,10 @@ def seed_productos_ejemplo(session):
         {
             "nombre": "Pizza Mozzarella",
             "descripcion": "Masa artesanal, salsa de tomate, mozzarella fresco y oregano",
-            "precio": 12000.0,
+            "precio_base": 12000.0,
             "stock_cantidad": 20,
             "disponible": True,
-            "imagen_url": None,
+            "imagenes_url": None,
             "categoria": "Pizzas",
             "ingredientes": [
                 (ing["Masa de pizza"], 1, unid, False),
@@ -272,10 +272,10 @@ def seed_productos_ejemplo(session):
         {
             "nombre": "Pizza Pepperoni",
             "descripcion": "Masa artesanal, salsa de tomate, mozzarella y pepperoni",
-            "precio": 14000.0,
+            "precio_base": 14000.0,
             "stock_cantidad": 15,
             "disponible": True,
-            "imagen_url": None,
+            "imagenes_url": None,
             "categoria": "Pizzas",
             "ingredientes": [
                 (ing["Masa de pizza"], 1, unid, False),
@@ -287,10 +287,10 @@ def seed_productos_ejemplo(session):
         {
             "nombre": "Papas Fritas",
             "descripcion": "Papas fritas crujientes con sal marina",
-            "precio": 4500.0,
+            "precio_base": 4500.0,
             "stock_cantidad": 100,
             "disponible": True,
-            "imagen_url": None,
+            "imagenes_url": None,
             "categoria": "Papas y Acompanantes",
             "ingredientes": [
                 (ing["Papa"], 300, g, False),
@@ -300,10 +300,10 @@ def seed_productos_ejemplo(session):
         {
             "nombre": "Ensalada Caesar",
             "descripcion": "Lechuga fresca, pollo grillé, croutons y aderezo Caesar",
-            "precio": 9500.0,
+            "precio_base": 9500.0,
             "stock_cantidad": 25,
             "disponible": True,
-            "imagen_url": None,
+            "imagenes_url": None,
             "categoria": "Ensaladas",
             "ingredientes": [
                 (ing["Lechuga"], 1, unid, False),
@@ -344,7 +344,7 @@ def seed_productos_ejemplo(session):
                 )
                 session.add(pi)
 
-        print(f"  Producto creado: {p['nombre']} (${p['precio']:,.0f})")
+        print(f"  Producto creado: {p['nombre']} (${p['precio_base']:,.0f})")
 
 
 if __name__ == "__main__":

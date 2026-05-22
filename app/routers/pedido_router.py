@@ -69,7 +69,7 @@ def avanzar_estado(
     current_user: Usuario = Depends(require_roles("ADMIN", "PEDIDOS"))
 ):
     service = PedidoService(db)
-    return service.avanzar_estado(pedido_id, datos.estado_codigo)
+    return service.avanzar_estado(pedido_id, datos.estado_codigo, current_user.id)
 
 
 # Cancelar pedido (CLIENT - solo los suyos)
