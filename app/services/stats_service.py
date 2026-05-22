@@ -41,7 +41,7 @@ class StatsService:
         ventas_totales = self.db.exec(
             select(func.coalesce(func.sum(Pedido.total), 0.0)).where(
                 Pedido.estado_actual_id == estado_entregado_id,
-                Pedido.activo == True,
+                Pedido.deleted_at == None,
             )
         ).one()
 
@@ -52,7 +52,7 @@ class StatsService:
             select(func.count(Pedido.id)).where(
                 Pedido.fecha >= inicio_hoy,
                 Pedido.fecha < fin_hoy,
-                Pedido.activo == True,
+                Pedido.deleted_at == None,
             )
         ).one()
 
@@ -67,7 +67,7 @@ class StatsService:
         pedidos_pendientes = self.db.exec(
             select(func.count(Pedido.id)).where(
                 Pedido.estado_actual_id == estado_pendiente_id,
-                Pedido.activo == True,
+                Pedido.deleted_at == None,
             )
         ).one()
 
@@ -98,7 +98,7 @@ class StatsService:
             ).where(
                 Pedido.estado_actual_id == estado_entregado_id,
                 Pedido.fecha >= inicio_semana,
-                Pedido.activo == True,
+                Pedido.deleted_at == None,
             ).group_by(
                 func.date(Pedido.fecha)
             ).order_by(
@@ -132,7 +132,7 @@ class StatsService:
         # Subquery: IDs de pedidos ENTREGADOS
         pedidos_entregados = select(Pedido.id).where(
             Pedido.estado_actual_id == estado_entregado_id,
-            Pedido.activo == True,
+            Pedido.deleted_at == None,
         ).subquery()
 
         # Agrupar detalles de pedido por producto

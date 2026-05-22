@@ -34,7 +34,7 @@ try:
         prod_create = ProductoCreate(
             nombre="ProductoTest",
             descripcion="Test description",
-            precio=99.99,
+            precio_base=99.99,
             categoria_ids=[categorias[0].id],
             ingrediente_ids=[ingredientes[0].id]
         )
@@ -43,7 +43,7 @@ try:
         nuevo = Producto(
             nombre=prod_create.nombre,
             descripcion=prod_create.descripcion,
-            precio=prod_create.precio
+            precio_base=prod_create.precio_base
         )
         print(f"    [OK] Modelo creado\n")
         
