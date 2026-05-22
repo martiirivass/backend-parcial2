@@ -3,6 +3,9 @@ from datetime import datetime
 from sqlmodel import SQLModel, Field
 from pydantic import field_validator
 
+from app.schemas.historial_estado_schema import HistorialEstadoRead
+from app.schemas.pago_schema import PagoRead
+
 
 class DetallePedidoCreate(SQLModel):
     producto_id: int
@@ -16,8 +19,8 @@ class DetallePedidoCreate(SQLModel):
 
 
 class PedidoCreate(SQLModel):
-    forma_pago_id: int
-    direccion_entrega_id: Optional[int] = None
+    forma_pago_codigo: str
+    direccion_id: Optional[int] = None
     items: List[DetallePedidoCreate]
 
     @field_validator("items")
@@ -28,36 +31,36 @@ class PedidoCreate(SQLModel):
 
 
 class AvanceEstadoRequest(SQLModel):
-    estado_id: int
+    estado_codigo: str
 
 
 class DetallePedidoRead(SQLModel):
-    id: int
+    pedido_id: int
     producto_id: int
-    nombre_producto: str
-    precio_unitario: float
+    nombre_snapshot: str
+    precio_snapshot: float
     cantidad: int
-    subtotal: float
-
-
-class HistorialEstadoRead(SQLModel):
-    id: int
-    estado_pedido_id: int
-    fecha: datetime
-    observacion: Optional[str] = None
+    subtotal_snap: float
+    personalizacion: Optional[str] = None
+    created_at: datetime
 
 
 class PedidoRead(SQLModel):
     id: int
     usuario_id: int
-    fecha: datetime
+    direccion_id: Optional[int] = None
+    estado_codigo: str
+    forma_pago_codigo: str
+    subtotal: float
+    descuento: float
+    costo_envio: float
     total: float
-    estado_actual_id: int
-    forma_pago_id: int
-    direccion_entrega_id: Optional[int] = None
-    activo: bool
+    notas: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
 
-class PedidoReadWithDetalles(PedidoRead):
+class PedidoReadWithDetails(PedidoRead):
     detalles: List[DetallePedidoRead] = []
     historial_estados: List[HistorialEstadoRead] = []
+    pagos: List[PagoRead] = []

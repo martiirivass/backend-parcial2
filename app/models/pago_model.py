@@ -13,7 +13,7 @@ class Pago(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     pedido_id: int = Field(foreign_key="pedidos.id")
     monto: float
-    forma_pago_id: int = Field(foreign_key="formas_pago.id")
+    forma_pago_codigo: str = Field(foreign_key="formas_pago.codigo", max_length=20)
     referencia: Optional[str] = Field(default=None, max_length=100)
     created_at: datetime = Field(default_factory=datetime.now)
 

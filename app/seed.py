@@ -120,9 +120,15 @@ def seed_admin(session):
             apellido="Sistema",
             email="admin@admin.com",
             password=hash_password("admin123"),
-            roles=[rol_admin]
         )
         session.add(admin)
+        session.flush()
+
+        # Asigno el rol ADMIN via UsuarioRol (N:N)
+        from app.models.usuario_rol_model import UsuarioRol
+        ur = UsuarioRol(usuario_id=admin.id, rol_codigo=rol_admin.codigo)
+        session.add(ur)
+
         print("  Usuario admin creado: admin@admin.com / admin123")
     else:
         print("  Usuario admin ya existe")
