@@ -25,7 +25,7 @@ from app.repositories.pedido_repository import PedidoRepository
 from app.repositories.pago_repository import PagoRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.unit_of_work import UnitOfWork
-from app.auth.security import hash_password, verify_password, create_access_token
+from app.auth.security import hash_password, hash_token, verify_password, create_access_token
 from app.auth.services import register_user
 from datetime import datetime, timezone
 
@@ -110,8 +110,8 @@ try:
     # ============================================================
     print("\n📦 4. USUARIOS — Register y Password")
     # ============================================================
-    check("Hash password funciona", verify_password("admin123", admin.password) if admin else False)
-    check("Hash password rechaza incorrecta", not verify_password("wrong", admin.password) if admin else False)
+    check("Hash password funciona", verify_password("admin123", admin.password_hash) if admin else False)
+    check("Hash password rechaza incorrecta", not verify_password("wrong", admin.password_hash) if admin else False)
 
     # ============================================================
     print("\n📦 5. REPOSITORIOS — CRUD basico")
@@ -184,7 +184,7 @@ try:
             if len(detalles) > 0:
                 d = detalles[0]
                 check("Snapshot: nombre_snapshot guardado", d.nombre_snapshot == productos[0].nombre)
-                check("Snapshot: precio_snapshot guardado", d.precio_snapshot == productos[0].precio)
+                check("Snapshot: precio_snapshot guardado", d.precio_snapshot == productos[0].precio_base)
                 check("Snapshot: subtotal_snap calculado", d.subtotal_snap > 0)
                 check("Snapshot: cantidad correcta", d.cantidad == 2)
 
@@ -195,29 +195,29 @@ try:
             ).all()
             check("HistorialEstado creado (PENDIENTE)", len(historial) >= 1)
             if len(historial) > 0:
-                check("Historial: estado_codigo correcto", historial[0].estado_codigo == "PENDIENTE")
+                check("Historial: estado_hacia correcto", historial[0].estado_hacia == "PENDIENTE")
 
             # Avanzo estado
-            pedido_avanzado = ps.avanzar_estado(pedido_creado.id, "CONFIRMADO")
-            pedido_avanzado2 = ps.avanzar_estado(pedido_creado.id, "EN_PREP")
-            pedido_avanzado3 = ps.avanzar_estado(pedido_creado.id, "EN_CAMINO")
+            pedido_avanzado = ps.avanzar_estado(pedido_creado.id, "CONFIRMADO", cliente.id)
+            pedido_avanzado2 = ps.avanzar_estado(pedido_creado.id, "EN_PREP", cliente.id)
+            pedido_avanzado3 = ps.avanzar_estado(pedido_creado.id, "EN_CAMINO", cliente.id)
             check("Estado avanzado a EN_CAMINO", pedido_avanzado3.estado_codigo == "EN_CAMINO")
 
             # Verifico historial actualizado
             historial2 = db.exec(
                 select(HistorialEstadoPedido)
                 .where(HistorialEstadoPedido.pedido_id == pedido_creado.id)
-                .order_by(HistorialEstadoPedido.fecha)
+                .order_by(HistorialEstadoPedido.created_at)
             ).all()
             check("Historial: 4 entradas (PEND+CONF+EN_PREP+EN_CAMINO)", len(historial2) == 4)
 
             # Transicion invalida (ENTREGADO -> CANCELADO no es valida pero EN_CAMINO -> ENTREGADO si)
-            pedido_entregado = ps.avanzar_estado(pedido_creado.id, "ENTREGADO")
+            pedido_entregado = ps.avanzar_estado(pedido_creado.id, "ENTREGADO", cliente.id)
             check("Estado avanzado a ENTREGADO", pedido_entregado.estado_codigo == "ENTREGADO")
 
             # Intento transicion invalida
             try:
-                ps.avanzar_estado(pedido_creado.id, "CANCELADO")
+                ps.avanzar_estado(pedido_creado.id, "CANCELADO", cliente.id)
                 check("Transicion invalida ENTREGADO->CANCELADO RECHAZADA", False, "Deberia haber lanzado excepcion")
             except Exception:
                 check("Transicion invalida ENTREGADO->CANCELADO RECHAZADA", True)
@@ -241,6 +241,12 @@ try:
                 forma_pago_codigo="EFECTIVO",
                 items=[DetallePedidoCreate(producto_id=productos[0].id, cantidad=1)]
             ))
+
+            # Avanzo a CONFIRMADO y ENTREGADO para poder pagar
+            ps.avanzar_estado(pedido_pago.id, "CONFIRMADO", cliente.id)
+            ps.avanzar_estado(pedido_pago.id, "EN_PREP", cliente.id)
+            ps.avanzar_estado(pedido_pago.id, "EN_CAMINO", cliente.id)
+            ps.avanzar_estado(pedido_pago.id, "ENTREGADO", cliente.id)
 
             pago = pago_svc.registrar_pago(PagoCreate(
                 pedido_id=pedido_pago.id,
@@ -276,22 +282,23 @@ try:
         import secrets
         from datetime import timedelta
 
+        raw_token = secrets.token_urlsafe(64)
         rt = RefreshToken(
             usuario_id=admin.id,
-            token=secrets.token_urlsafe(64),
+            token_hash=hash_token(raw_token),
             expires_at=datetime.now(timezone.utc) + timedelta(days=7)
         )
         db.add(rt)
         db.commit()
 
-        valido = repo_rt.get_valid_token(rt.token)
+        valido = repo_rt.get_valid_token(hash_token(raw_token))
         check("RefreshTokenRepository: token valido encontrado", valido is not None)
         check("RefreshTokenRepository: token pertenece al admin", valido.usuario_id == admin.id if valido else False)
 
         # Revoco
         repo_rt.revoke_user_tokens(admin.id)
         db.commit()
-        invalido = repo_rt.get_valid_token(rt.token)
+        invalido = repo_rt.get_valid_token(hash_token(raw_token))
         check("RefreshTokenRepository: token revocado no es valido", invalido is None)
 
     # ============================================================
@@ -301,7 +308,7 @@ try:
         p = productos[0]
         check("Producto tiene stock_cantidad", hasattr(p, "stock_cantidad"))
         check("Producto tiene disponible", hasattr(p, "disponible"))
-        check("Producto tiene imagen_url", hasattr(p, "imagen_url"))
+        check("Producto tiene imagenes_url", hasattr(p, "imagenes_url"))
         check("Producto tiene created_at", hasattr(p, "created_at") and p.created_at is not None)
         check("Producto tiene updated_at", hasattr(p, "updated_at") and p.updated_at is not None)
         check("Producto tiene deleted_at (nullable)", hasattr(p, "deleted_at") and p.deleted_at is None)

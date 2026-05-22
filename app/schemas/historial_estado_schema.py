@@ -6,6 +6,8 @@ from sqlmodel import SQLModel
 class HistorialEstadoRead(SQLModel):
     id: int
     pedido_id: int
-    estado_codigo: str
-    observacion: Optional[str] = None
-    fecha: datetime
+    estado_desde: Optional[str] = None
+    estado_hacia: str
+    usuario_id: Optional[int] = None
+    motivo: Optional[str] = None
+    created_at: datetime

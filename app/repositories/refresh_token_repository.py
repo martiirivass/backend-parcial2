@@ -9,10 +9,10 @@ class RefreshTokenRepository(BaseRepository[RefreshToken]):
     def __init__(self, db: Session):
         super().__init__(db, RefreshToken)
 
-    def get_valid_token(self, token: str):
+    def get_valid_token(self, token_hash: str):
         return self.db.exec(
             select(RefreshToken).where(
-                RefreshToken.token == token,
+                RefreshToken.token_hash == token_hash,
                 RefreshToken.revoked_at == None,
                 RefreshToken.expires_at > datetime.now(timezone.utc)
             )

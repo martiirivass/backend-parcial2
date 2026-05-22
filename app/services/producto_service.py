@@ -187,7 +187,7 @@ class ProductoService:
             imagen_url = guardar_imagen(producto_id, archivo)
 
             # Actualizar campo en DB
-            producto.imagen_url = imagen_url
+            producto.imagenes_url = imagen_url
             self.repo.update(producto)
 
             self.uow.commit()

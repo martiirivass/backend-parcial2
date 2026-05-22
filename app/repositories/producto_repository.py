@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime, timezone
 from sqlmodel import Session, select, or_
 from app.models.producto_model import Producto
 from app.models.producto_categoria_model import ProductoCategoria
@@ -12,14 +13,14 @@ class ProductoRepository(BaseRepository[Producto]):
 
     def get_all(self):
         return self.db.exec(
-            select(Producto).where(Producto.activo == True)
+            select(Producto).where(Producto.deleted_at == None)
         ).all()
 
     def get_by_id(self, producto_id: int):
         return self.db.exec(
             select(Producto).where(
                 Producto.id == producto_id,
-                Producto.activo == True
+                Producto.deleted_at == None
             )
         ).first()
 
@@ -29,7 +30,7 @@ class ProductoRepository(BaseRepository[Producto]):
         disponible: Optional[bool] = None,
         q: Optional[str] = None
     ):
-        statement = select(Producto).where(Producto.activo == True)
+        statement = select(Producto).where(Producto.deleted_at == None)
 
         # Filtro por categoria (join con tabla intermedia)
         if categoria_id is not None:
@@ -56,5 +57,5 @@ class ProductoRepository(BaseRepository[Producto]):
         return self.db.exec(statement).all()
 
     def delete(self, producto: Producto):
-        producto.activo = False
+        producto.deleted_at = datetime.now(timezone.utc)
         self.db.add(producto)
