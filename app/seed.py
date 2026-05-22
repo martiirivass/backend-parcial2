@@ -4,12 +4,14 @@ from app.models.rol import Rol
 from app.models.usuario import Usuario
 from app.models.estado_pedido_model import EstadoPedido
 from app.models.forma_pago_model import FormaPago
+from app.models.unidad_medida_model import UnidadMedida
 from app.auth.security import hash_password
 
 
 def run_seed():
     with Session(engine) as session:
         seed_roles(session)
+        seed_unidades_medida(session)
         seed_estados_pedido(session)
         seed_formas_pago(session)
         seed_admin(session)
@@ -34,6 +36,28 @@ def seed_roles(session):
             print(f"  Rol creado: {r['codigo']}")
         else:
             print(f"  Rol ya existe: {r['codigo']}")
+
+
+def seed_unidades_medida(session):
+    unidades_data = [
+        {"nombre": "Kilogramo", "abreviatura": "kg", "descripcion": "Unidad de masa"},
+        {"nombre": "Gramo", "abreviatura": "g", "descripcion": "Unidad de masa"},
+        {"nombre": "Litro", "abreviatura": "L", "descripcion": "Unidad de volumen"},
+        {"nombre": "Mililitro", "abreviatura": "mL", "descripcion": "Unidad de volumen"},
+        {"nombre": "Unidad", "abreviatura": "unid", "descripcion": "Por pieza"},
+        {"nombre": "Docena", "abreviatura": "doc", "descripcion": "12 unidades"},
+        {"nombre": "Pack", "abreviatura": "pack", "descripcion": "Paquete multiple"},
+    ]
+
+    for u in unidades_data:
+        existe = session.exec(
+            select(UnidadMedida).where(UnidadMedida.nombre == u["nombre"])
+        ).first()
+        if not existe:
+            session.add(UnidadMedida(**u))
+            print(f"  Unidad creada: {u['nombre']} ({u['abreviatura']})")
+        else:
+            print(f"  Unidad ya existe: {u['nombre']}")
 
 
 def seed_estados_pedido(session):

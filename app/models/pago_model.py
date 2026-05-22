@@ -1,0 +1,20 @@
+from typing import Optional, TYPE_CHECKING
+from datetime import datetime
+
+from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from app.models.pedido_model import Pedido
+
+
+class Pago(SQLModel, table=True):
+    __tablename__ = "pagos"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    pedido_id: int = Field(foreign_key="pedidos.id")
+    monto: float
+    forma_pago_id: int = Field(foreign_key="formas_pago.id")
+    referencia: Optional[str] = Field(default=None, max_length=100)
+    created_at: datetime = Field(default_factory=datetime.now)
+
+    pedido: "Pedido" = Relationship(back_populates="pagos")
