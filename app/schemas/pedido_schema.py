@@ -22,6 +22,10 @@ class PedidoCreate(SQLModel):
     forma_pago_codigo: str
     direccion_id: Optional[int] = None
     items: List[DetallePedidoCreate]
+    referencia_pago: Optional[str] = Field(
+        default=None, max_length=200,
+        description="Referencia del pago (CBU para transferencia, últimos 4 dígitos para tarjeta)"
+    )
 
     @field_validator("items")
     def validar_items(cls, v):
