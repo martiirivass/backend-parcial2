@@ -7,6 +7,7 @@ from app.models.detalle_pedido_model import DetallePedido
 from app.models.historial_estado_model import HistorialEstadoPedido
 from app.models.estado_pedido_model import EstadoPedido
 from app.models.producto_model import Producto
+from app.models.pago_model import Pago
 from app.repositories.pedido_repository import PedidoRepository
 from app.unit_of_work import UnitOfWork
 
@@ -104,6 +105,16 @@ class PedidoService:
                 "PENDIENTE",
                 usuario_id
             )
+
+            # Si se incluyó referencia de pago, creo el registro de pago automáticamente
+            if datos.referencia_pago:
+                pago = Pago(
+                    pedido_id=pedido.id,
+                    monto=total,
+                    forma_pago_codigo=datos.forma_pago_codigo,
+                    referencia=datos.referencia_pago
+                )
+                self.db.add(pago)
 
             self.uow.commit()
             self.db.refresh(pedido)
