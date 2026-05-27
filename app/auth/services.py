@@ -4,57 +4,13 @@ from sqlmodel import Session, select
 from app.auth.security import (
     hash_password,
     verify_password,
-    create_access_token
+    create_access_token,
+    hash_password
 )
 
-from app.models.rol import Rol
 from app.models.usuario import Usuario
-from app.models.usuarioRol import UsuarioRol
-
-
-def register_user(
-    nombre: str,
-    email: str,
-    password: str,
-    session: Session
-):
-    existing_user = session.exec(
-        select(Usuario).where(
-            Usuario.email == email
-        )
-    ).first()
-
-    if existing_user:
-        raise HTTPException(
-            status_code=409,
-            detail="El email ya existe"
-        )
-
-    user = Usuario(
-        nombre=nombre,
-        email=email,
-        password=hash_password(password)
-    )
-
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-
-    client_role = session.exec(
-        select(Rol).where(
-            Rol.codigo == "CLIENT"
-        )
-    ).first()
-
-    user_role = UsuarioRol(
-        usuario_id=user.id,
-        rol_id=client_role.id
-    )
-
-    session.add(user_role)
-    session.commit()
-
-    return user
+from app.models.rol import Rol
+from app.models.usuario_rol_model import UsuarioRol
 
 
 def login_user(
@@ -76,7 +32,7 @@ def login_user(
 
     if not verify_password(
         password,
-        user.password
+        user.password_hash
     ):
         raise HTTPException(
             status_code=401,
@@ -88,3 +44,56 @@ def login_user(
     })
 
     return token
+
+
+def register_user(
+    nombre: str,
+    email: str,
+    password: str,
+    session: Session
+):
+    # Verificar si el email ya esta registrado
+    existente = session.exec(
+        select(Usuario).where(Usuario.email == email)
+    ).first()
+
+    if existente:
+        raise HTTPException(
+            status_code=400,
+            detail="El email ya esta registrado"
+        )
+
+    # Buscar el rol CLIENT por defecto
+    rol_cliente = session.exec(
+        select(Rol).where(Rol.codigo == "CLIENT")
+    ).first()
+
+    if not rol_cliente:
+        raise HTTPException(
+            status_code=500,
+            detail="Error de configuracion: rol CLIENT no encontrado"
+        )
+
+    # Crear el usuario
+    user = Usuario(
+        nombre=nombre,
+        apellido="",  # Opcional por ahora
+        email=email,
+        password_hash=hash_password(password),
+    )
+
+    session.add(user)
+    session.flush()
+
+    # Asigno el rol CLIENT por defecto via UsuarioRol
+    ur = UsuarioRol(usuario_id=user.id, rol_codigo=rol_cliente.codigo)
+    session.add(ur)
+
+    session.commit()
+    session.refresh(user)
+
+    return user
+
+
+def get_me(current_user: Usuario):
+    return current_user

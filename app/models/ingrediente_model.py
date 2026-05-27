@@ -1,4 +1,5 @@
 from typing import List, Optional
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
 from app.models.producto_ingrediente_model import ProductoIngrediente
 
@@ -11,13 +12,17 @@ class Ingrediente(SQLModel, table=True):
     __tablename__ = "ingredientes"
     
     id: Optional[int] = Field(default=None, primary_key=True)
-    nombre: str
+    nombre: str = Field(max_length=100, unique=True)
     descripcion: Optional[str] = None
-    es_alergeno: bool = False
-    activo: bool = Field(default=True)
+    es_alergeno: bool = Field(default=False)
+
+    # Timestamps y soft delete
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    deleted_at: Optional[datetime] = Field(default=None)
     
     # Relacion N:N con productos
     productos: List["Producto"] = Relationship(
         back_populates="ingredientes",
-        link_model= ProductoIngrediente
+        link_model=ProductoIngrediente
     )

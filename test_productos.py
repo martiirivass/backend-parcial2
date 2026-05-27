@@ -2,8 +2,8 @@ from sqlmodel import Session
 from app.db.database import engine
 from app.models.producto_model import Producto
 from app.repositories.producto_repository import ProductoRepository
-from app.repositories.category_repository import CategoriaRepository
-from app.repositories.ingredient_repository import IngredienteRepository
+from app.repositories.categoria_repository import CategoriaRepository
+from app.repositories.ingrediente_repository import IngredienteRepository
 from app.schemas.producto_schema import ProductoCreate
 from app.unit_of_work import UnitOfWork
 
@@ -34,7 +34,7 @@ try:
         prod_create = ProductoCreate(
             nombre="ProductoTest",
             descripcion="Test description",
-            precio=99.99,
+            precio_base=99.99,
             categoria_ids=[categorias[0].id],
             ingrediente_ids=[ingredientes[0].id]
         )
@@ -43,7 +43,7 @@ try:
         nuevo = Producto(
             nombre=prod_create.nombre,
             descripcion=prod_create.descripcion,
-            precio=prod_create.precio
+            precio_base=prod_create.precio_base
         )
         print(f"    [OK] Modelo creado\n")
         

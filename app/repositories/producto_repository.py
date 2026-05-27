@@ -1,31 +1,61 @@
-from sqlmodel import Session, select
+from typing import Optional
+from datetime import datetime, timezone
+from sqlmodel import Session, select, or_
 from app.models.producto_model import Producto
+from app.models.producto_categoria_model import ProductoCategoria
+from app.repositories.base import BaseRepository
 
 
-class ProductoRepository:
+class ProductoRepository(BaseRepository[Producto]):
 
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(db, Producto)
 
     def get_all(self):
-        statement = select(Producto).where(Producto.activo == True)
-        return self.db.exec(statement).all()
+        return self.db.exec(
+            select(Producto).where(Producto.deleted_at == None)
+        ).all()
 
     def get_by_id(self, producto_id: int):
-        statement = select(Producto).where(
-            Producto.id == producto_id,
-            Producto.activo == True
-        )
-        return self.db.exec(statement).first()
+        return self.db.exec(
+            select(Producto).where(
+                Producto.id == producto_id,
+                Producto.deleted_at == None
+            )
+        ).first()
 
-    def create(self, producto: Producto):
-        self.db.add(producto)
-        return producto
+    def get_all_filtered(
+        self,
+        categoria_id: Optional[int] = None,
+        disponible: Optional[bool] = None,
+        q: Optional[str] = None
+    ):
+        statement = select(Producto).where(Producto.deleted_at == None)
 
-    def update(self, producto: Producto):
-        self.db.add(producto)
-        return producto
+        # Filtro por categoria (join con tabla intermedia)
+        if categoria_id is not None:
+            statement = statement.join(
+                ProductoCategoria,
+                Producto.id == ProductoCategoria.producto_id
+            ).where(
+                ProductoCategoria.categoria_id == categoria_id
+            )
+
+        # Filtro por disponibilidad
+        if disponible is not None:
+            statement = statement.where(Producto.disponible == disponible)
+
+        # Busqueda por texto
+        if q is not None and q.strip():
+            statement = statement.where(
+                or_(
+                    Producto.nombre.ilike(f"%{q}%"),
+                    Producto.descripcion.ilike(f"%{q}%")
+                )
+            )
+
+        return self.db.exec(statement).all()
 
     def delete(self, producto: Producto):
-        producto.activo = False
+        producto.deleted_at = datetime.now(timezone.utc)
         self.db.add(producto)

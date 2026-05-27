@@ -1,21 +1,16 @@
-from typing import Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:
+    from app.models.usuario_rol_model import UsuarioRol
 
 
 class Rol(SQLModel, table=True):
     __tablename__ = "roles"
 
-    id: Optional[int] = Field(
-        default=None,
-        primary_key=True
-    )
+    codigo: str = Field(default=None, primary_key=True, max_length=20)
+    nombre: str
+    descripcion: Optional[str] = None
 
-    name: str = Field(
-        unique=True,
-        nullable=False
-    )
-
-    usuarios: list["Usuario"] = Relationship(
-        back_populates="rol"
-    )
+    usuario_roles: List["UsuarioRol"] = Relationship(back_populates="rol")

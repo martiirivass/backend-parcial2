@@ -1,31 +1,27 @@
+from datetime import datetime
 from sqlmodel import Session, select
 from app.models.ingrediente_model import Ingrediente
+from app.repositories.base import BaseRepository
 
 
-class IngredienteRepository:
+class IngredienteRepository(BaseRepository[Ingrediente]):
 
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(db, Ingrediente)
 
     def get_all(self):
-        statement = select(Ingrediente).where(Ingrediente.activo == True)
-        return self.db.exec(statement).all()
+        return self.db.exec(
+            select(Ingrediente).where(Ingrediente.deleted_at == None)
+        ).all()
 
     def get_by_id(self, ingrediente_id: int):
-        statement = select(Ingrediente).where(
-            Ingrediente.id == ingrediente_id,
-            Ingrediente.activo == True
-        )
-        return self.db.exec(statement).first()
-
-    def create(self, ingrediente: Ingrediente):
-        self.db.add(ingrediente)
-        return ingrediente
-
-    def update(self, ingrediente: Ingrediente):
-        self.db.add(ingrediente)
-        return ingrediente
+        return self.db.exec(
+            select(Ingrediente).where(
+                Ingrediente.id == ingrediente_id,
+                Ingrediente.deleted_at == None
+            )
+        ).first()
 
     def delete(self, ingrediente: Ingrediente):
-        ingrediente.activo = False
+        ingrediente.deleted_at = datetime.now()
         self.db.add(ingrediente)

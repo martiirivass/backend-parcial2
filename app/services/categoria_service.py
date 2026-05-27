@@ -1,9 +1,14 @@
 import logging
 
 from fastapi import HTTPException
+from sqlmodel import select
+
+from fastapi import UploadFile
 
 from app.models.categoria_model import Categoria
+from app.models.producto_categoria_model import ProductoCategoria
 from app.repositories.categoria_repository import CategoriaRepository
+from app.services.imagen_service import guardar_imagen_categoria
 from app.unit_of_work import UnitOfWork
 
 logger = logging.getLogger(__name__)
@@ -37,15 +42,38 @@ class CategoriaService:
             self.uow.rollback()
             raise
 
-    # Listar categorías
-    def listar_categorias(self, limit: int, offset: int):
+    # Listar categorías con filtro opcional por parent_id
+    def listar_categorias(self, limit: int, offset: int, parent_id=None):
 
-        categorias = self.repo.get_all()
+        categorias = self.repo.get_all(parent_id=parent_id)
 
         return {
             "data": categorias[offset: offset + limit],
             "total": len(categorias)
         }
+
+    # Consulta recursiva: arbol de categorias
+    def get_tree(self):
+        # Traigo todas las categorias activas
+        todas = self.repo.get_all()
+
+        # Construyo el arbol recursivamente
+        def _build_tree(parent_id=None):
+            tree = []
+            for cat in todas:
+                if cat.parent_id == parent_id:
+                    categoria_data = {
+                        "id": cat.id,
+                        "nombre": cat.nombre,
+                        "descripcion": cat.descripcion,
+                        "imagen_url": cat.imagen_url,
+                        "parent_id": cat.parent_id,
+                        "subcategorias": _build_tree(cat.id)
+                    }
+                    tree.append(categoria_data)
+            return tree
+
+        return _build_tree()
 
     # Obtener categoría por ID
     def obtener_categoria(self, categoria_id: int):
@@ -90,7 +118,36 @@ class CategoriaService:
             self.uow.rollback()
             raise
 
-    # Eliminar categoría
+    def subir_imagen(self, categoria_id: int, archivo: UploadFile):
+        try:
+            categoria = self.repo.get_by_id(categoria_id)
+
+            if not categoria:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Categoria no encontrada"
+                )
+
+            # Guardar imagen en disco y obtener URL
+            imagen_url = guardar_imagen_categoria(categoria_id, archivo)
+
+            # Actualizar campo en DB
+            categoria.imagen_url = imagen_url
+            self.repo.update(categoria)
+
+            self.uow.commit()
+            self.db.refresh(categoria)
+
+            return categoria
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.exception(f"Error subiendo imagen de categoria: {e}")
+            self.uow.rollback()
+            raise
+
+    # Eliminar categoría (con validacion HTTP 409)
     def eliminar_categoria(self, categoria_id: int):
 
         try:
@@ -103,10 +160,25 @@ class CategoriaService:
                     detail="Categoria no encontrada"
                 )
 
+            # Verificar si tiene productos activos asociados
+            productos_asociados = self.db.exec(
+                select(ProductoCategoria).where(
+                    ProductoCategoria.categoria_id == categoria_id
+                )
+            ).first()
+
+            if productos_asociados:
+                raise HTTPException(
+                    status_code=409,
+                    detail="No se puede eliminar la categoria porque tiene productos asociados"
+                )
+
             self.repo.delete(categoria)
 
             self.uow.commit()
 
+        except HTTPException:
+            raise
         except Exception as e:
             logger.exception(f"Error deleting categoria: {e}")
             self.uow.rollback()
