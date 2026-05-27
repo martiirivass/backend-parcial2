@@ -14,7 +14,7 @@ class UnitOfWork:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
-            # Si hubo una excepcion, hago rollback
+            # rollback
             self.rollback()
         else:
             # Si todo salio bien, commit

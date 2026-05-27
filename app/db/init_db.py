@@ -22,8 +22,12 @@ from app.models.refresh_token_model import RefreshToken
 
 
 def init_db():
-    SQLModel.metadata.create_all(engine)
+    print("[init_db] Starting...")
+    # Comentado temporalmente - causa deadlock
+    # SQLModel.metadata.create_all(engine)
+    print("[init_db] Skipping create_all (debugging deadlock)")
 
     # Seed data obligatorio
-    from app.seed import run_seed
-    run_seed()
+    # from app.seed import run_seed
+    # run_seed()
+    print("[init_db] Seed deshabilitado temporalmente")

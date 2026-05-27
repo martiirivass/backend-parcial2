@@ -21,10 +21,10 @@ router = APIRouter(
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 def register(
-    data: RegisterRequest,
-    session: Session = Depends(get_session)
+    data: RegisterRequest, #Datos del schema
+    session: Session = Depends(get_session) #conexion con bd
 ):
-    user = register_user(
+    user = register_user(  #delega la logica al service
         nombre=data.nombre,
         email=data.email,
         password=data.password,
@@ -35,40 +35,41 @@ def register(
 
 @router.post("/login")
 def login(
-    data: LoginRequest,
+    data: LoginRequest, #datos del schema
     response: Response,
     session: Session = Depends(get_session)
 ):
-    token = login_user(
+    token = login_user( #el service busca usuario, verifica contraseña, genera jwt
         email=data.email,
         password=data.password,
         session=session
     )
 
     # Decodifico el user ID del token para crear el refresh
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    usuario_id = int(payload.get("sub"))
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]) #obtiene el id del usuario
+    usuario_id = int(payload.get("sub")) #obtiene el usuario
 
     # Creo refresh token (almaceno SHA-256, devuelvo raw)
     refresh_token_str = secrets.token_urlsafe(64)
     refresh = RefreshToken(
         usuario_id=usuario_id,
-        token_hash=hash_token(refresh_token_str),
-        expires_at=datetime.now(UTC) + timedelta(days=7)
+        token_hash=hash_token(refresh_token_str), #guaardamos sha-256
+        expires_at=datetime.now(UTC) + timedelta(days=7) #el refresh dura 7 dias
     )
     session.add(refresh)
     session.commit()
-
+     
+     #guarda jwt en cookie
     response.set_cookie(
         key="access_token",
         value=token,
-        httponly=True,
+        httponly=True, #importante p seguridad, js no puede leer la cookie
         secure=False,
         samesite="lax",
-        max_age=1800
+        max_age=1800 #30 mins
     )
     response.set_cookie(
-        key="refresh_token",
+        key="refresh_token", #dura max_age ( 7 dias)
         value=refresh_token_str,
         httponly=True,
         secure=False,
@@ -77,7 +78,7 @@ def login(
     )
 
     return {
-        "message": "Login exitoso"
+        "message": "Login exitoso" #esto devuelve el login
     }
 
 
@@ -135,6 +136,7 @@ def refresh(
     }
 
 
+#endpoint para obtener usuario actual
 @router.get("/me")
 def me(
     current_user: Usuario = Depends(get_current_user)
@@ -150,7 +152,7 @@ def me(
         ]
     }
 
-
+#Elimina cookie y cierra sesion
 @router.post("/logout")
 def logout(response: Response):
     """Limpia las cookies de autenticación."""

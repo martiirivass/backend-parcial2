@@ -17,8 +17,10 @@ from app.routers.pago_router import router as pago
 
 from fastapi.middleware.cors import CORSMiddleware
 
+print("[OK] Imports completados")
 
 app = FastAPI()
+print("[OK] FastAPI app creada")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,26 +34,44 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+print("[OK] CORS middleware agregado")
 
-# Montar archivos estáticos para imágenes subidas (el service guarda en backend-parcial2/uploads/)
+# Montar archivos estáticos para imágenes subidas
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+print("[OK] Static files montados")
 
 
 @app.on_event("startup")
 def on_startup():
+    print("[OK] Iniciando startup...")
     init_db()
+    print("[OK] init_db() completado")
 
 app.include_router(auth)
+print("[OK] Auth router incluido")
 app.include_router(producto)
+print("[OK] Producto router incluido")
 app.include_router(categoria)
+print("[OK] Categoria router incluido")
 app.include_router(ingrediente)
+print("[OK] Ingrediente router incluido")
 app.include_router(pedido)
+print("[OK] Pedido router incluido")
 app.include_router(direccion)
+print("[OK] Direccion router incluido")
 app.include_router(admin)
+print("[OK] Admin router incluido")
 app.include_router(stats)
+print("[OK] Stats router incluido")
 app.include_router(unidad_medida)
+print("[OK] UnidadMedida router incluido")
 app.include_router(forma_pago)
+print("[OK] FormaPago router incluido")
 app.include_router(estado_pedido)
+print("[OK] EstadoPedido router incluido")
 app.include_router(pago)
+print("[OK] Pago router incluido")
+
+print("*** APP LISTA ***")

@@ -3,7 +3,7 @@ from os import getenv
 
 DATABASE_URL = getenv(
     "DATABASE_URL",
-    "postgresql+psycopg://postgres:enzo2006@localhost:5432/parcial_db"
+    "postgresql+psycopg://postgres:postgres@localhost:8080/postgres"
 )
 
 engine = create_engine(
