@@ -5,7 +5,6 @@ from app.auth.security import (
     hash_password,
     verify_password,
     create_access_token,
-    hash_password
 )
 
 from app.models.usuario import Usuario
@@ -54,7 +53,8 @@ def register_user(
 ):
     # Verificar si el email ya esta registrado
     existente = session.exec(
-        select(Usuario).where(Usuario.email == email)
+        select(Usuario).where(
+            Usuario.email == email)
     ).first()
 
     if existente:
@@ -65,7 +65,9 @@ def register_user(
 
     # Buscar el rol CLIENT por defecto
     rol_cliente = session.exec(
-        select(Rol).where(Rol.codigo == "CLIENT")
+        select(Rol).where(
+            Rol.codigo == "CLIENT"
+        )
     ).first()
 
     if not rol_cliente:
@@ -74,7 +76,7 @@ def register_user(
             detail="Error de configuracion: rol CLIENT no encontrado"
         )
 
-    # Crear el usuario
+    # Crear usuario
     user = Usuario(
         nombre=nombre,
         apellido="",  # Opcional por ahora
@@ -83,14 +85,17 @@ def register_user(
     )
 
     session.add(user)
+
+    # Necesario para obtener el ID antes del commit
     session.flush()
 
-    # Asigno el rol CLIENT por defecto via UsuarioRol
-    ur = UsuarioRol(usuario_id=user.id, rol_codigo=rol_cliente.codigo)
-    session.add(ur)
+    # Asignar rol CLIENT por defecto
+    usuario_rol = UsuarioRol(
+        usuario_id=user.id,
+        rol_codigo=rol_cliente.codigo
+    )
 
-    session.commit()
-    session.refresh(user)
+    session.add(usuario_rol)
 
     return user
 
