@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlmodel import Session
 
 from app.db.database import get_session
@@ -7,10 +7,11 @@ from app.schemas.direccion_schema import (
     DireccionEntregaUpdate,
     DireccionEntregaRead,
 )
+
 from app.services.direccion_service import DireccionEntregaService
 from app.auth.dependencies import get_current_user
-from app.auth.permissions import require_roles
 from app.models.usuario import Usuario
+from app.core.unit_of_work import UnitOfWork
 
 router = APIRouter(
     prefix="/direcciones-entrega",
@@ -18,39 +19,53 @@ router = APIRouter(
 )
 
 
-# Crear direccion de entrega
 @router.post("/", response_model=DireccionEntregaRead, status_code=201)
 def crear(
     datos: DireccionEntregaCreate,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-    service = DireccionEntregaService(db)
-    return service.crear_direccion(current_user.id, datos)
+
+    with UnitOfWork(db):
+
+        service = DireccionEntregaService(db)
+
+        direccion = service.crear_direccion(
+            current_user.id,
+            datos
+        )
+
+        db.refresh(direccion)
+
+        return direccion
 
 
-# Listar mis direcciones de entrega
-@router.get("/")
+@router.get("/", response_model=list[DireccionEntregaRead])
 def listar(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
+
     service = DireccionEntregaService(db)
+
     return service.listar_direcciones(current_user.id)
 
 
-# Obtener direccion de entrega
 @router.get("/{direccion_id}", response_model=DireccionEntregaRead)
 def obtener(
     direccion_id: int,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
+
     service = DireccionEntregaService(db)
-    return service.obtener_direccion(direccion_id, current_user.id)
+
+    return service.obtener_direccion(
+        direccion_id,
+        current_user.id
+    )
 
 
-# Actualizar direccion de entrega
 @router.put("/{direccion_id}", response_model=DireccionEntregaRead)
 def actualizar(
     direccion_id: int,
@@ -58,16 +73,34 @@ def actualizar(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-    service = DireccionEntregaService(db)
-    return service.actualizar_direccion(direccion_id, current_user.id, datos)
+
+    with UnitOfWork(db):
+
+        service = DireccionEntregaService(db)
+
+        direccion = service.actualizar_direccion(
+            direccion_id,
+            current_user.id,
+            datos
+        )
+
+        db.refresh(direccion)
+
+        return direccion
 
 
-# Eliminar direccion de entrega (soft delete)
 @router.delete("/{direccion_id}", status_code=204)
 def eliminar(
     direccion_id: int,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-    service = DireccionEntregaService(db)
-    service.eliminar_direccion(direccion_id, current_user.id)
+
+    with UnitOfWork(db):
+
+        service = DireccionEntregaService(db)
+
+        service.eliminar_direccion(
+            direccion_id,
+            current_user.id
+        )

@@ -3,8 +3,9 @@ import logging
 from fastapi import HTTPException
 
 from app.models.ingrediente_model import Ingrediente
-from app.repositories.ingrediente_repository import IngredienteRepository
-from app.unit_of_work import UnitOfWork
+from app.repositories.ingrediente_repository import (
+    IngredienteRepository
+)
 
 logger = logging.getLogger(__name__)
 
@@ -12,45 +13,47 @@ logger = logging.getLogger(__name__)
 class IngredienteService:
 
     def __init__(self, db):
-        self.db = db
         self.repo = IngredienteRepository(db)
-        self.uow = UnitOfWork(db)
 
     # Crear ingrediente
     def crear_ingrediente(self, ingrediente_data):
 
-        try:
+        nuevo = Ingrediente(
+            **ingrediente_data.model_dump()
+        )
 
-            nuevo = Ingrediente(
-                **ingrediente_data.model_dump()
-            )
+        self.repo.create(nuevo)
 
-            self.repo.create(nuevo)
-
-            self.uow.commit()
-            self.db.refresh(nuevo)
-
-            return nuevo
-
-        except Exception as e:
-            logger.exception(f"Error creating ingrediente: {e}")
-            self.uow.rollback()
-            raise
+        return nuevo
 
     # Listar ingredientes
-    def listar_ingredientes(self, limit: int, offset: int):
+    def listar_ingredientes(
+        self,
+        limit: int,
+        offset: int
+    ):
 
-        ingredientes = self.repo.get_all()
+        ingredientes = self.repo.get_all(
+            limit=limit,
+            offset=offset
+        )
+
+        total = self.repo.count()
 
         return {
-            "data": ingredientes[offset: offset + limit],
-            "total": len(ingredientes)
+            "data": ingredientes,
+            "total": total
         }
 
     # Obtener ingrediente
-    def obtener_ingrediente(self, ingrediente_id: int):
+    def obtener_ingrediente(
+        self,
+        ingrediente_id: int
+    ):
 
-        ingrediente = self.repo.get_by_id(ingrediente_id)
+        ingrediente = self.repo.get_by_id(
+            ingrediente_id
+        )
 
         if not ingrediente:
             raise HTTPException(
@@ -61,53 +64,47 @@ class IngredienteService:
         return ingrediente
 
     # Actualizar ingrediente
-    def actualizar_ingrediente(self, ingrediente_id: int, datos):
+    def actualizar_ingrediente(
+        self,
+        ingrediente_id: int,
+        datos
+    ):
 
-        try:
+        ingrediente = self.repo.get_by_id(
+            ingrediente_id
+        )
 
-            ingrediente = self.repo.get_by_id(ingrediente_id)
+        if not ingrediente:
+            raise HTTPException(
+                status_code=404,
+                detail="Ingrediente no encontrado"
+            )
 
-            if not ingrediente:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Ingrediente no encontrado"
-                )
+        update_data = datos.model_dump(
+            exclude_unset=True
+        )
 
-            update_data = datos.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(ingrediente, key, value)
 
-            for key, value in update_data.items():
-                setattr(ingrediente, key, value)
+        self.repo.update(ingrediente)
 
-            self.repo.update(ingrediente)
-
-            self.uow.commit()
-            self.db.refresh(ingrediente)
-
-            return ingrediente
-
-        except Exception as e:
-            logger.exception(f"Error updating ingrediente: {e}")
-            self.uow.rollback()
-            raise
+        return ingrediente
 
     # Eliminar ingrediente
-    def eliminar_ingrediente(self, ingrediente_id: int):
+    def eliminar_ingrediente(
+        self,
+        ingrediente_id: int
+    ):
 
-        try:
+        ingrediente = self.repo.get_by_id(
+            ingrediente_id
+        )
 
-            ingrediente = self.repo.get_by_id(ingrediente_id)
+        if not ingrediente:
+            raise HTTPException(
+                status_code=404,
+                detail="Ingrediente no encontrado"
+            )
 
-            if not ingrediente:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Ingrediente no encontrado"
-                )
-
-            self.repo.delete(ingrediente)
-
-            self.uow.commit()
-
-        except Exception as e:
-            logger.exception(f"Error deleting ingrediente: {e}")
-            self.uow.rollback()
-            raise
+        self.repo.delete(ingrediente)
