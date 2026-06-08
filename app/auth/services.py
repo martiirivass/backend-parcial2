@@ -52,12 +52,13 @@ def register_user(
     password: str,
     session: Session
 ):
+    print("1")
+
     auth_repository = AuthRepository(session)
 
-    # Verificar email existente
-    existente = auth_repository.get_user_by_email(
-        email
-    )
+    existente = auth_repository.get_user_by_email(email)
+
+    print("2")
 
     if existente:
         raise HTTPException(
@@ -65,8 +66,9 @@ def register_user(
             detail="El email ya esta registrado"
         )
 
-    # Obtener rol CLIENT
     rol_cliente = auth_repository.get_client_role()
+
+    print("3")
 
     if not rol_cliente:
         raise HTTPException(
@@ -74,7 +76,6 @@ def register_user(
             detail="Error de configuración: rol CLIENT no encontrado"
         )
 
-    # Crear usuario
     user = Usuario(
         nombre=nombre,
         apellido="",
@@ -82,12 +83,16 @@ def register_user(
         password_hash=hash_password(password),
     )
 
+    print("4")
+
     auth_repository.add(user)
 
-    # Necesario para obtener el ID antes del commit
+    print("5")
+
     session.flush()
 
-    # Relación usuario-rol
+    print("6", user.id)
+
     usuario_rol = UsuarioRol(
         usuario_id=user.id,
         rol_codigo=rol_cliente.codigo
@@ -97,8 +102,9 @@ def register_user(
         usuario_rol
     )
 
-    return user
+    print("7")
 
+    return user
 
 def get_me(current_user: Usuario):
     return current_user

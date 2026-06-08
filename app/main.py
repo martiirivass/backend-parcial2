@@ -14,8 +14,12 @@ from app.routers.unidad_medida_router import router as unidad_medida
 from app.routers.forma_pago_router import router as forma_pago
 from app.routers.estado_pedido_router import router as estado_pedido
 from app.routers.pago_router import router as pago
-
 from fastapi.middleware.cors import CORSMiddleware
+
+
+from sqlmodel import Session
+from app.db.database import engine
+from sqlalchemy import text
 
 print("[OK] Imports completados")
 
@@ -36,7 +40,7 @@ app.add_middleware(
 )
 print("[OK] CORS middleware agregado")
 
-# Montar archivos estáticos para imágenes subidas
+# archivos estáticos para imágenes subidas
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
@@ -45,10 +49,15 @@ print("[OK] Static files montados")
 
 @app.on_event("startup")
 def on_startup():
-    print("[OK] Iniciando startup...")
-    init_db()
-    print("[OK] init_db() completado")
+    print("Probando conexión...")
 
+    with Session(engine) as session:
+        result = session.exec(text("SELECT 1"))
+        print(result.first())
+
+    print("[OK] Iniciando init_db...")
+    init_db()
+    print("[OK] init_db completado")
 app.include_router(auth)
 print("[OK] Auth router incluido")
 app.include_router(producto)

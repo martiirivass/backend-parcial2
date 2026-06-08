@@ -3,9 +3,10 @@ from os import getenv
 
 DATABASE_URL = getenv(
     "DATABASE_URL",
-    "postgresql+psycopg://postgres:postgres@localhost:8080/postgres"
+    "postgresql+psycopg://postgres:postgres@localhost:5433/postgres"
 )
 
+print("DATABASE_URL =", DATABASE_URL)
 engine = create_engine(
     DATABASE_URL,
     echo=getenv("ENV", "dev") == "dev"
