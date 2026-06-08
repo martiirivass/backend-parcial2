@@ -69,12 +69,18 @@ def seed_unidades_medida(session):
 
 def seed_estados_pedido(session):
     estados_data = [
-        {"codigo": "PENDIENTE", "descripcion": "Pedido creado, esperando confirmacion", "orden": 1, "es_terminal": False},
-        {"codigo": "CONFIRMADO", "descripcion": "Pedido confirmado, en proceso de preparacion", "orden": 2, "es_terminal": False},
-        {"codigo": "EN_PREP", "descripcion": "Pedido siendo preparado", "orden": 3, "es_terminal": False},
-        {"codigo": "EN_CAMINO", "descripcion": "Pedido en camino al destino", "orden": 4, "es_terminal": False},
-        {"codigo": "ENTREGADO", "descripcion": "Pedido entregado al cliente", "orden": 5, "es_terminal": True},
-        {"codigo": "CANCELADO", "descripcion": "Pedido cancelado", "orden": 6, "es_terminal": True},
+        {
+            "codigo": "PENDIENTE",
+            "descripcion": "Pedido creado, esperando pago",
+            "orden": 1,
+            "es_terminal": False
+        },
+        {
+            "codigo": "PAGADO",
+            "descripcion": "Pago aprobado",
+            "orden": 2,
+            "es_terminal": True
+        }
     ]
 
     for e in estados_data:

@@ -10,7 +10,7 @@ from app.repositories.categoria_repository import (
 )
 
 from app.services.imagen_service import (
-    guardar_imagen_categoria
+    ImagenService
 )
 
 logger = logging.getLogger(__name__)

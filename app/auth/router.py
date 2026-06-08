@@ -15,8 +15,7 @@ from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.models.refresh_token_model import RefreshToken
 from app.auth.dependencies import get_current_user
 from app.models.usuario import Usuario
-from app.uow import UnitOfWork
-
+from app.core.unit_of_work import UnitOfWork
 from datetime import datetime, timedelta, UTC
 import secrets
 import jwt
@@ -27,17 +26,16 @@ router = APIRouter(
 )
 
 
-@router.post(
-    "/register",
-    response_model=UserResponse,
-    status_code=201
-)
+@router.post("/register")
 def register(
     data: RegisterRequest,
     session: Session = Depends(get_session)
 ):
+    print("A")
 
     with UnitOfWork(session):
+
+        print("B")
 
         user = register_user(
             nombre=data.nombre,
@@ -46,10 +44,15 @@ def register(
             session=session
         )
 
-    session.refresh(user)
+        print("C")
 
-    return user
+    print("D")
 
+    return {
+        "id": user.id,
+        "nombre": user.nombre,
+        "email": user.email
+    }
 
 @router.post("/login")
 def login(

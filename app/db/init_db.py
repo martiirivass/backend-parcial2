@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel
 from app.db.database import engine
 
-# Importo todos los modelos para que SQLModel los cree
+# Importo todos los modelos para que SQLModel los registre
 from app.models.producto_model import Producto
 from app.models.categoria_model import Categoria
 from app.models.ingrediente_model import Ingrediente
@@ -20,14 +20,12 @@ from app.models.pago_model import Pago
 from app.models.direccion_entrega_model import DireccionEntrega
 from app.models.refresh_token_model import RefreshToken
 
-
 def init_db():
     print("[init_db] Starting...")
-    # Comentado temporalmente - causa deadlock
-    # SQLModel.metadata.create_all(engine)
-    print("[init_db] Skipping create_all (debugging deadlock)")
 
-    # Seed data obligatorio
-    # from app.seed import run_seed
-    # run_seed()
-    print("[init_db] Seed deshabilitado temporalmente")
+    SQLModel.metadata.create_all(engine)
+
+    from app.seed import run_seed
+    run_seed()
+
+    print("[init_db] Seed OK")

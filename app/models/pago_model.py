@@ -14,7 +14,7 @@ class Pago(SQLModel, table=True):
     pedido_id: int = Field(foreign_key="pedidos.id")
     monto: float
     forma_pago_codigo: str = Field(foreign_key="formas_pago.codigo", max_length=20)
-    referencia: Optional[str] = Field(default=None, max_length=100)
+    referencia: payment_id_mp  #
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
