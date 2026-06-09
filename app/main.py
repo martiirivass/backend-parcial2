@@ -15,6 +15,8 @@ from app.routers.forma_pago_router import router as forma_pago
 from app.routers.estado_pedido_router import router as estado_pedido
 from app.routers.pago_router import router as pago
 from fastapi.middleware.cors import CORSMiddleware
+#mp
+from app.routers.mercadopago_router import router as mercadopago_router
 
 
 from sqlmodel import Session
@@ -82,5 +84,10 @@ app.include_router(estado_pedido)
 print("[OK] EstadoPedido router incluido")
 app.include_router(pago)
 print("[OK] Pago router incluido")
+app.include_router(
+    mercadopago_router,
+    prefix="/api/v1"
+)
+print("[OK] Mercado Pago incluido")
 
 print("*** APP LISTA ***")
