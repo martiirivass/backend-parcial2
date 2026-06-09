@@ -1,4 +1,8 @@
+import asyncio
 import logging
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
+
 from fastapi import HTTPException
 
 from app.models.pedido_model import Pedido
@@ -12,21 +16,25 @@ from app.repositories.estado_pedido_repository import EstadoPedidoRepository
 from app.repositories.historial_repository import HistorialRepository
 from app.repositories.pago_repository import PagoRepository
 
+if TYPE_CHECKING:
+    from app.core.ws_manager import WSManager
+
 logger = logging.getLogger(__name__)
 
 TRANSICIONES = {
     "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
     "CONFIRMADO": ["EN_PREP", "CANCELADO"],
-    "EN_PREP": ["EN_CAMINO"],
-    "EN_CAMINO": ["ENTREGADO"],
+    "EN_PREP": ["ENTREGADO", "CANCELADO"],
     "ENTREGADO": [],
     "CANCELADO": [],
 }
 class PedidoService:
 
-    def __init__(self, db):
+    def __init__(self, db, ws_manager: "WSManager | None" = None):
 
         self.db = db
+        self.ws_manager = ws_manager
+        self._pending_events: list[dict] = []
 
         self.repo = PedidoRepository(db)
 
@@ -37,6 +45,55 @@ class PedidoService:
         self.historial_repo = HistorialRepository(db)
 
         self.pago_repo = PagoRepository(db)
+
+    # ── WebSocket event helpers ────────────────────────────────────────
+    # El broadcast DEBE ejecutarse después del commit del UoW.
+    # Estas solo acumulan eventos; flush_events() los envía.
+
+    def _add_event(
+        self,
+        pedido_id: int,
+        estado_anterior: str | None,
+        estado_nuevo: str | None,
+        usuario_id: int,
+    ) -> None:
+        """Acumula un evento para broadcast posterior (post-UoW)."""
+        self._pending_events.append({
+            "pedido_id": pedido_id,
+            "estado_anterior": estado_anterior,
+            "estado_nuevo": estado_nuevo,
+            "usuario_id": usuario_id,
+        })
+
+    def flush_events(self) -> None:
+        """
+        Envía TODOS los eventos acumulados vía WebSocket.
+        Debe llamarse SIEMPRE después del commit del UnitOfWork,
+        NUNCA dentro del bloque with UnitOfWork().
+
+        Usa broadcast_to_pedido_sync que es thread-safe:
+        funciona desde handlers sync (thread pool) y async (event loop).
+        """
+        if not self.ws_manager:
+            self._pending_events.clear()
+            return
+
+        events = self._pending_events.copy()
+        self._pending_events.clear()
+
+        for ev in events:
+            event_payload = {
+                "event": "pedido_estado_changed",
+                "pedido_id": ev["pedido_id"],
+                "estado_anterior": ev["estado_anterior"],
+                "estado_nuevo": ev["estado_nuevo"],
+                "usuario_id": ev["usuario_id"],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            self.ws_manager.broadcast_to_pedido_sync(
+                ev["pedido_id"],
+                event_payload,
+            )
 
     def _get_estado_by_codigo(self, codigo):
 
@@ -154,6 +211,14 @@ class PedidoService:
 
             self.pago_repo.create(pago)
 
+        # Acumular evento WebSocket (broadcast post-UoW en el router)
+        self._add_event(
+            pedido.id,
+            None,
+            "PENDIENTE",
+            usuario_id,
+        )
+
         return pedido
 
     def avanzar_estado(
@@ -203,6 +268,14 @@ class PedidoService:
             usuario_id
         )
 
+        # Acumular evento WebSocket (broadcast post-UoW en el router)
+        self._add_event(
+            pedido.id,
+            estado_actual.codigo,
+            nuevo_estado.codigo,
+            usuario_id,
+        )
+
         return pedido
 
     def cancelar_pedido(
@@ -250,6 +323,14 @@ class PedidoService:
             estado_actual.codigo,
             "CANCELADO",
             usuario_id
+        )
+
+        # Acumular evento WebSocket (broadcast post-UoW en el router)
+        self._add_event(
+            pedido.id,
+            estado_actual.codigo,
+            "CANCELADO",
+            usuario_id,
         )
 
         return pedido

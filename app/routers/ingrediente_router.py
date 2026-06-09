@@ -53,19 +53,28 @@ def crear(
 
 
 # Listar ingredientes
-@router.get("/")
+@router.get(
+    "/",
+    response_model=list[IngredienteRead],
+    summary="Listar ingredientes"
+)
 def listar(
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
+    q: str | None = Query(
+        None,
+        description="Buscar ingrediente"
+    ),
     db: Session = Depends(get_session)
 ):
 
     service = IngredienteService(db)
 
     return service.listar_ingredientes(
-        limit,
-        offset
-    )
+    limit,
+    offset,
+    q
+)
 
 
 # Obtener ingrediente

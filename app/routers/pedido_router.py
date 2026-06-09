@@ -16,6 +16,7 @@ from app.auth.permissions import require_roles
 from app.models.usuario import Usuario
 
 from app.core.unit_of_work import UnitOfWork
+from app.core.ws_manager import ws_manager
 
 router = APIRouter(
     prefix="/pedidos",
@@ -37,7 +38,7 @@ def crear_pedido(
     )
 ):
 
-    service = PedidoService(db)
+    service = PedidoService(db, ws_manager)
 
     with UnitOfWork(db):
 
@@ -46,13 +47,20 @@ def crear_pedido(
             datos
         )
 
+    # Broadcast WebSocket DESPUÉS del commit del UoW
+    service.flush_events()
+
     db.refresh(pedido)
 
     return pedido
 
 
 # Listar pedidos
-@router.get("/")
+@router.get(
+    "/",
+    response_model=list[PedidoReadWithDetails],
+    summary="Listar pedidos"
+)
 def listar_pedidos(
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
@@ -80,7 +88,8 @@ def listar_pedidos(
 # Obtener pedido por ID
 @router.get(
     "/{pedido_id}",
-    response_model=PedidoReadWithDetails
+    response_model=PedidoReadWithDetails,
+    summary="Obtener pedido por ID"
 )
 def obtener_pedido(
     pedido_id: int,
@@ -98,7 +107,10 @@ def obtener_pedido(
 
 
 # Avanzar estado
-@router.patch("/{pedido_id}/estado")
+@router.patch(
+    "/{pedido_id}/estado",
+    summary="Avanzar estado de un pedido"
+)
 def avanzar_estado(
     pedido_id: int,
     datos: AvanceEstadoRequest,
@@ -108,7 +120,7 @@ def avanzar_estado(
     )
 ):
 
-    service = PedidoService(db)
+    service = PedidoService(db, ws_manager)
 
     with UnitOfWork(db):
 
@@ -118,13 +130,19 @@ def avanzar_estado(
             current_user.id
         )
 
+    # Broadcast WebSocket DESPUÉS del commit del UoW
+    service.flush_events()
+
     db.refresh(pedido)
 
     return pedido
 
 
 # Cancelar pedido
-@router.patch("/{pedido_id}/cancelar")
+@router.patch(
+    "/{pedido_id}/cancelar",
+    summary="Cancelar un pedido"
+)
 def cancelar_pedido(
     pedido_id: int,
     db: Session = Depends(get_session),
@@ -133,7 +151,7 @@ def cancelar_pedido(
     )
 ):
 
-    service = PedidoService(db)
+    service = PedidoService(db, ws_manager)
 
     with UnitOfWork(db):
 
@@ -142,13 +160,19 @@ def cancelar_pedido(
             current_user.id
         )
 
+    # Broadcast WebSocket DESPUÉS del commit del UoW
+    service.flush_events()
+
     db.refresh(pedido)
 
     return pedido
 
 
 # Obtener historial de estados
-@router.get("/{pedido_id}/historial")
+@router.get(
+    "/{pedido_id}/historial",
+    summary="Obtener historial de estados de un pedido"
+)
 def obtener_historial(
     pedido_id: int,
     db: Session = Depends(get_session),

@@ -3,6 +3,7 @@ import logging
 from fastapi import HTTPException
 
 from app.models.ingrediente_model import Ingrediente
+
 from app.repositories.ingrediente_repository import (
     IngredienteRepository
 )
@@ -13,16 +14,22 @@ logger = logging.getLogger(__name__)
 class IngredienteService:
 
     def __init__(self, db):
+
         self.repo = IngredienteRepository(db)
 
     # Crear ingrediente
-    def crear_ingrediente(self, ingrediente_data):
+    def crear_ingrediente(
+        self,
+        ingrediente_data
+    ):
 
         nuevo = Ingrediente(
             **ingrediente_data.model_dump()
         )
 
-        self.repo.create(nuevo)
+        self.repo.create(
+            nuevo
+        )
 
         return nuevo
 
@@ -30,7 +37,8 @@ class IngredienteService:
     def listar_ingredientes(
         self,
         limit: int,
-        offset: int
+        offset: int,
+        q: str | None = None
     ):
 
         ingredientes = self.repo.get_all(
@@ -38,11 +46,17 @@ class IngredienteService:
             offset=offset
         )
 
-        total = self.repo.count()
+        if q:
+
+            ingredientes = [
+                ingrediente
+                for ingrediente in ingredientes
+                if q.lower() in ingrediente.nombre.lower()
+            ]
 
         return {
             "data": ingredientes,
-            "total": total
+            "total": len(ingredientes)
         }
 
     # Obtener ingrediente
@@ -56,6 +70,7 @@ class IngredienteService:
         )
 
         if not ingrediente:
+
             raise HTTPException(
                 status_code=404,
                 detail="Ingrediente no encontrado"
@@ -75,6 +90,7 @@ class IngredienteService:
         )
 
         if not ingrediente:
+
             raise HTTPException(
                 status_code=404,
                 detail="Ingrediente no encontrado"
@@ -85,9 +101,16 @@ class IngredienteService:
         )
 
         for key, value in update_data.items():
-            setattr(ingrediente, key, value)
 
-        self.repo.update(ingrediente)
+            setattr(
+                ingrediente,
+                key,
+                value
+            )
+
+        self.repo.update(
+            ingrediente
+        )
 
         return ingrediente
 
@@ -102,9 +125,12 @@ class IngredienteService:
         )
 
         if not ingrediente:
+
             raise HTTPException(
                 status_code=404,
                 detail="Ingrediente no encontrado"
             )
 
-        self.repo.delete(ingrediente)
+        self.repo.delete(
+            ingrediente
+        )

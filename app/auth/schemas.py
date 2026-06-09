@@ -1,25 +1,58 @@
 from pydantic import BaseModel, EmailStr
 
-#datos de registro
+
+# =========================
+# REQUESTS
+# =========================
+
 class RegisterRequest(BaseModel):
     nombre: str
     email: EmailStr
     password: str
 
-#datos de login
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
-#esquema para presentar roles
+
+# =========================
+# ROLES
+# =========================
+
 class RolInfo(BaseModel):
-    id: int
     codigo: str
     nombre: str
 
-#define como se devuelve un usuario en el frontend
+
+# =========================
+# RESPONSES
+# =========================
+
+class RegisterResponse(BaseModel):
+    id: int
+    nombre: str
+    email: str
+
+
+class LoginResponse(BaseModel):
+    message: str
+
+
+class RefreshResponse(BaseModel):
+    message: str
+
+
+class LogoutResponse(BaseModel):
+    message: str
+
+
 class UserResponse(BaseModel):
     id: int
     nombre: str
     email: str
     roles: list[RolInfo] = []
+
+
+class MeResponse(UserResponse):
+    pass

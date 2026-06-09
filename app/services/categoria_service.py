@@ -158,7 +158,7 @@ class CategoriaService:
                 detail="Categoria no encontrada"
             )
 
-        imagen_url = guardar_imagen_categoria(
+        imagen_url = ImagenService.guardar(
             categoria_id,
             archivo
         )

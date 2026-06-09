@@ -1,8 +1,32 @@
-from fastapi import APIRouter, Depends, Response, HTTPException, Request
+from datetime import datetime, timedelta, UTC
+import secrets
+import jwt
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    Response,
+    HTTPException,
+    Request
+)
+
 from sqlmodel import Session
 
-from app.auth.schemas import LoginRequest, RegisterRequest, UserResponse
-from app.auth.services import login_user, register_user
+from app.auth.schemas import (
+    LoginRequest,
+    RegisterRequest,
+    RegisterResponse,
+    LoginResponse,
+    RefreshResponse,
+    LogoutResponse,
+    MeResponse
+)
+
+from app.auth.services import (
+    login_user,
+    register_user
+)
+
 from app.auth.security import (
     create_access_token,
     hash_token,
@@ -11,14 +35,24 @@ from app.auth.security import (
 )
 
 from app.db.database import get_session
-from app.repositories.refresh_token_repository import RefreshTokenRepository
-from app.models.refresh_token_model import RefreshToken
-from app.auth.dependencies import get_current_user
+
+from app.repositories.refresh_token_repository import (
+    RefreshTokenRepository
+)
+
+from app.models.refresh_token_model import (
+    RefreshToken
+)
+
+from app.auth.dependencies import (
+    get_current_user
+)
+
 from app.models.usuario import Usuario
-from app.core.unit_of_work import UnitOfWork
-from datetime import datetime, timedelta, UTC
-import secrets
-import jwt
+
+from app.core.unit_of_work import (
+    UnitOfWork
+)
 
 router = APIRouter(
     prefix="/auth",
@@ -26,16 +60,18 @@ router = APIRouter(
 )
 
 
-@router.post("/register")
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=201,
+    summary="Registrar usuario cliente"
+)
 def register(
     data: RegisterRequest,
     session: Session = Depends(get_session)
 ):
-    print("A")
 
     with UnitOfWork(session):
-
-        print("B")
 
         user = register_user(
             nombre=data.nombre,
@@ -44,17 +80,19 @@ def register(
             session=session
         )
 
-        print("C")
-
-    print("D")
-
     return {
         "id": user.id,
         "nombre": user.nombre,
         "email": user.email
     }
 
-@router.post("/login")
+
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    status_code=200,
+    summary="Iniciar sesión"
+)
 def login(
     data: LoginRequest,
     response: Response,
@@ -69,7 +107,6 @@ def login(
             session=session
         )
 
-        # Decodifico user ID del token
         payload = jwt.decode(
             token,
             SECRET_KEY,
@@ -80,7 +117,6 @@ def login(
             payload.get("sub")
         )
 
-        # Creo refresh token
         refresh_token_str = secrets.token_urlsafe(64)
 
         refresh = RefreshToken(
@@ -114,7 +150,12 @@ def login(
     }
 
 
-@router.post("/refresh")
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    status_code=200,
+    summary="Renovar access token"
+)
 def refresh(
     request: Request,
     response: Response,
@@ -145,17 +186,14 @@ def refresh(
 
     with UnitOfWork(session):
 
-        # Revocar token usado
         stored.revoked_at = datetime.now(UTC)
 
         session.add(stored)
 
-        # Nuevo access token
         new_token = create_access_token({
             "sub": str(stored.usuario_id)
         })
 
-        # Nuevo refresh token
         new_raw = secrets.token_urlsafe(64)
 
         new_refresh = RefreshToken(
@@ -189,10 +227,15 @@ def refresh(
     }
 
 
-@router.get("/me")
+@router.get(
+    "/me",
+    response_model=MeResponse,
+    summary="Obtener usuario autenticado"
+)
 def me(
     current_user: Usuario = Depends(get_current_user)
 ):
+
     return {
         "id": current_user.id,
         "nombre": current_user.nombre,
@@ -207,8 +250,15 @@ def me(
     }
 
 
-@router.post("/logout")
-def logout(response: Response):
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    status_code=200,
+    summary="Cerrar sesión"
+)
+def logout(
+    response: Response
+):
 
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")

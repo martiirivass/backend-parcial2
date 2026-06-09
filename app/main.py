@@ -14,6 +14,8 @@ from app.routers.unidad_medida_router import router as unidad_medida
 from app.routers.forma_pago_router import router as forma_pago
 from app.routers.estado_pedido_router import router as estado_pedido
 from app.routers.pago_router import router as pago
+from app.routers.ws_router import router as ws
+from app.core.ws_manager import ws_manager
 from fastapi.middleware.cors import CORSMiddleware
 #mp
 from app.routers.mercadopago_router import router as mercadopago_router
@@ -57,6 +59,10 @@ def on_startup():
         result = session.exec(text("SELECT 1"))
         print(result.first())
 
+    # Almacenar event loop principal para WebSocket sync broadcast
+    import asyncio
+    ws_manager.store_main_loop(asyncio.get_event_loop())
+
     print("[OK] Iniciando init_db...")
     init_db()
     print("[OK] init_db completado")
@@ -84,6 +90,8 @@ app.include_router(estado_pedido)
 print("[OK] EstadoPedido router incluido")
 app.include_router(pago)
 print("[OK] Pago router incluido")
+app.include_router(ws)
+print("[OK] WebSocket router incluido")
 app.include_router(
     mercadopago_router,
     prefix="/api/v1"

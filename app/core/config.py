@@ -20,7 +20,7 @@ ALLOWED_IMAGE_EXTENSIONS = {
 class Settings(BaseSettings):
 
     # Mercado Pago
-    MP_ACCESS_TOKEN: str
+    MP_ACCESS_TOKEN: str | None = None
     MP_PUBLIC_KEY: str | None = None
     MP_NOTIFICATION_URL: str | None = None
 

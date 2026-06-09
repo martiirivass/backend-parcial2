@@ -37,6 +37,9 @@ class PedidoCreate(SQLModel):
 class AvanceEstadoRequest(SQLModel):
     estado_codigo: str
 
+class CancelarPedidoRequest(SQLModel):
+    motivo: str
+
 
 class DetallePedidoRead(SQLModel):
     pedido_id: int

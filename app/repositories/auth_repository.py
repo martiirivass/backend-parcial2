@@ -51,3 +51,4 @@ class AuthRepository:
     ) -> None:
 
         self.session.add(usuario_rol)
+        
