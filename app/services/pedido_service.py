@@ -14,12 +14,14 @@ from app.repositories.pago_repository import PagoRepository
 
 logger = logging.getLogger(__name__)
 
-# Máquina de estados del pedido PROFESOR PIDE PENDIENTE O PAGADO PARA INTEGRAR MP
 TRANSICIONES = {
-    "PENDIENTE": ["PAGADO"],
-    "PAGADO": []
+    "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
+    "CONFIRMADO": ["EN_PREP", "CANCELADO"],
+    "EN_PREP": ["EN_CAMINO"],
+    "EN_CAMINO": ["ENTREGADO"],
+    "ENTREGADO": [],
+    "CANCELADO": [],
 }
-
 class PedidoService:
 
     def __init__(self, db):
@@ -229,7 +231,10 @@ class PedidoService:
             pedido.estado_codigo
         )
 
-        if estado_actual.codigo != "PENDIENTE":
+        if estado_actual.codigo not in [
+            "PENDIENTE",
+            "CONFIRMADO"
+        ]:
 
             raise HTTPException(
                 status_code=400,

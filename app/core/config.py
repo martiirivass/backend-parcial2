@@ -1,5 +1,8 @@
 from pathlib import Path
 
+from pydantic_settings import BaseSettings
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 UPLOADS_DIR = BASE_DIR / "uploads"
@@ -12,3 +15,18 @@ ALLOWED_IMAGE_EXTENSIONS = {
     ".png",
     ".webp"
 }
+
+
+class Settings(BaseSettings):
+
+    # Mercado Pago
+    MP_ACCESS_TOKEN: str
+    MP_PUBLIC_KEY: str | None = None
+    MP_NOTIFICATION_URL: str | None = None
+
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
+
+
+settings = Settings()
