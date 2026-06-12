@@ -200,8 +200,8 @@ try:
             # Avanzo estado
             pedido_avanzado = ps.avanzar_estado(pedido_creado.id, "CONFIRMADO", cliente.id)
             pedido_avanzado2 = ps.avanzar_estado(pedido_creado.id, "EN_PREP", cliente.id)
-            pedido_avanzado3 = ps.avanzar_estado(pedido_creado.id, "EN_CAMINO", cliente.id)
-            check("Estado avanzado a EN_CAMINO", pedido_avanzado3.estado_codigo == "EN_CAMINO")
+            pedido_avanzado3 = ps.avanzar_estado(pedido_creado.id, "ENTREGADO", cliente.id)
+            check("Estado avanzado a ENTREGADO", pedido_avanzado3.estado_codigo == "ENTREGADO")
 
             # Verifico historial actualizado
             historial2 = db.exec(
@@ -209,10 +209,9 @@ try:
                 .where(HistorialEstadoPedido.pedido_id == pedido_creado.id)
                 .order_by(HistorialEstadoPedido.created_at)
             ).all()
-            check("Historial: 4 entradas (PEND+CONF+EN_PREP+EN_CAMINO)", len(historial2) == 4)
+            check("Historial: 4 entradas (PEND+CONF+EN_PREP+ENTREGADO)", len(historial2) == 4)
 
-            # Transicion invalida (ENTREGADO -> CANCELADO no es valida pero EN_CAMINO -> ENTREGADO si)
-            pedido_entregado = ps.avanzar_estado(pedido_creado.id, "ENTREGADO", cliente.id)
+            # Transicion invalida (ENTREGADO -> CANCELADO no es valida)
             check("Estado avanzado a ENTREGADO", pedido_entregado.estado_codigo == "ENTREGADO")
 
             # Intento transicion invalida
@@ -242,10 +241,9 @@ try:
                 items=[DetallePedidoCreate(producto_id=productos[0].id, cantidad=1)]
             ))
 
-            # Avanzo a CONFIRMADO y ENTREGADO para poder pagar
+            # Avanzo a CONFIRMADO, EN_PREP y ENTREGADO para poder pagar
             ps.avanzar_estado(pedido_pago.id, "CONFIRMADO", cliente.id)
             ps.avanzar_estado(pedido_pago.id, "EN_PREP", cliente.id)
-            ps.avanzar_estado(pedido_pago.id, "EN_CAMINO", cliente.id)
             ps.avanzar_estado(pedido_pago.id, "ENTREGADO", cliente.id)
 
             pago = pago_svc.registrar_pago(PagoCreate(

@@ -1,5 +1,7 @@
 from sqlmodel import Session, select
 from app.db.database import engine
+
+# ── Modelos base (tablas independientes) ──
 from app.models.rol import Rol
 from app.models.usuario import Usuario
 from app.models.estado_pedido_model import EstadoPedido
@@ -8,8 +10,18 @@ from app.models.unidad_medida_model import UnidadMedida
 from app.models.categoria_model import Categoria
 from app.models.ingrediente_model import Ingrediente
 from app.models.producto_model import Producto
+
+# ── Modelos de relación / dependientes ──
+from app.models.usuario_rol_model import UsuarioRol
 from app.models.producto_categoria_model import ProductoCategoria
 from app.models.producto_ingrediente_model import ProductoIngrediente
+from app.models.pedido_model import Pedido
+from app.models.detalle_pedido_model import DetallePedido
+from app.models.historial_estado_model import HistorialEstadoPedido
+from app.models.pago_model import Pago
+from app.models.direccion_entrega_model import DireccionEntrega
+from app.models.refresh_token_model import RefreshToken
+
 from app.auth.security import hash_password
 
 
@@ -50,10 +62,9 @@ def seed_unidades_medida(session):
         {"nombre": "Kilogramo", "simbolo": "kg", "tipo": "masa"},
         {"nombre": "Gramo", "simbolo": "g", "tipo": "masa"},
         {"nombre": "Litro", "simbolo": "L", "tipo": "volumen"},
-        {"nombre": "Mililitro", "simbolo": "mL", "tipo": "volumen"},
-        {"nombre": "Unidad", "simbolo": "u", "tipo": "unidad"},
-        {"nombre": "Docena", "simbolo": "doc", "tipo": "unidad"},
-        {"nombre": "Metro cuadrado", "simbolo": "m²", "tipo": "area"},
+        {"nombre": "Mililitro", "simbolo": "ml", "tipo": "volumen"},
+        {"nombre": "Unidad", "simbolo": "ud", "tipo": "unidad"},
+        {"nombre": "Porciones", "simbolo": "porciones", "tipo": "contable"},
     ]
 
     for u in unidades_data:
@@ -88,21 +99,15 @@ def seed_estados_pedido(session):
             "es_terminal": False
         },
         {
-            "codigo": "EN_CAMINO",
-            "descripcion": "Pedido despachado",
-            "orden": 4,
-            "es_terminal": False
-        },
-        {
             "codigo": "ENTREGADO",
             "descripcion": "Pedido entregado",
-            "orden": 5,
+            "orden": 4,
             "es_terminal": True
         },
         {
             "codigo": "CANCELADO",
             "descripcion": "Pedido cancelado",
-            "orden": 6,
+            "orden": 5,
             "es_terminal": True
         }
     ]
@@ -121,7 +126,6 @@ def seed_estados_pedido(session):
 def seed_formas_pago(session):
     formas_data = [
         {"codigo": "EFECTIVO", "descripcion": "Pago en efectivo al recibir", "habilitado": True},
-        {"codigo": "TARJETA", "descripcion": "Debito o credito", "habilitado": True},
         {"codigo": "TRANSFERENCIA", "descripcion": "Transferencia bancaria", "habilitado": True},
         {"codigo": "MERCADOPAGO", "descripcion": "Mercado Pago", "habilitado": True},
     ]
@@ -149,25 +153,24 @@ def seed_admin(session):
 
     # Me fijo si ya existe el admin
     admin = session.exec(
-        select(Usuario).where(Usuario.email == "admin@admin.com")
+        select(Usuario).where(Usuario.email == "admin@foodstore.com")
     ).first()
 
     if not admin:
         admin = Usuario(
             nombre="Admin",
             apellido="Sistema",
-            email="admin@admin.com",
-            password_hash=hash_password("admin123"),
+            email="admin@foodstore.com",
+            password_hash=hash_password("Admin1234!"),
         )
         session.add(admin)
         session.flush()
 
         # Asigno el rol ADMIN via UsuarioRol (N:N)
-        from app.models.usuario_rol_model import UsuarioRol
         ur = UsuarioRol(usuario_id=admin.id, rol_codigo=rol_admin.codigo)
         session.add(ur)
 
-        print("  Usuario admin creado: admin@admin.com / admin123")
+        print("  Usuario admin creado: admin@foodstore.com / Admin1234!")
     else:
         print("  Usuario admin ya existe")
 
@@ -234,8 +237,8 @@ def seed_productos_ejemplo(session):
     kg = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "kg")).first()
     g = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "g")).first()
     L = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "L")).first()
-    mL = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "mL")).first()
-    unid = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "u")).first()
+    mL = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "ml")).first()
+    unid = session.exec(select(UnidadMedida).where(UnidadMedida.simbolo == "ud")).first()
 
     # Busco ingredientes por nombre
     ing = {}

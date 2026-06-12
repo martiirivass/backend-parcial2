@@ -25,7 +25,7 @@ def init_db():
 
     SQLModel.metadata.create_all(engine)
 
-    from app.seed import run_seed
+    from app.db.seed import run_seed
     run_seed()
 
     print("[init_db] Seed OK")
