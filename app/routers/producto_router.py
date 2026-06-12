@@ -211,6 +211,7 @@ def subir_imagen(
             archivo
         )
 
+        db.flush()
         db.refresh(producto)
 
         return producto

@@ -18,6 +18,7 @@ from app.routers.ws_router import router as ws
 from app.core.ws_manager import ws_manager
 from fastapi.middleware.cors import CORSMiddleware
 from app.pagos.router import router as pagos
+from app.services.cloudinary_service import CloudinaryService
 
 
 from sqlmodel import Session
@@ -60,34 +61,36 @@ def on_startup():
     import asyncio
     ws_manager.store_main_loop(asyncio.get_event_loop())
 
+    CloudinaryService.inicializar()
+
     print("[OK] Iniciando init_db...")
     init_db()
     print("[OK] init_db completado")
 
 
-app.include_router(auth)
+app.include_router(auth, prefix="/api/v1")
 print("[OK] Auth router incluido")
-app.include_router(producto)
+app.include_router(producto, prefix="/api/v1")
 print("[OK] Producto router incluido")
-app.include_router(categoria)
+app.include_router(categoria, prefix="/api/v1")
 print("[OK] Categoria router incluido")
-app.include_router(ingrediente)
+app.include_router(ingrediente, prefix="/api/v1")
 print("[OK] Ingrediente router incluido")
-app.include_router(pedido)
+app.include_router(pedido, prefix="/api/v1")
 print("[OK] Pedido router incluido")
-app.include_router(direccion)
+app.include_router(direccion, prefix="/api/v1")
 print("[OK] Direccion router incluido")
-app.include_router(admin)
+app.include_router(admin, prefix="/api/v1")
 print("[OK] Admin router incluido")
-app.include_router(stats)
+app.include_router(stats, prefix="/api/v1")
 print("[OK] Stats router incluido")
-app.include_router(unidad_medida)
+app.include_router(unidad_medida, prefix="/api/v1")
 print("[OK] UnidadMedida router incluido")
-app.include_router(forma_pago)
+app.include_router(forma_pago, prefix="/api/v1")
 print("[OK] FormaPago router incluido")
-app.include_router(estado_pedido)
+app.include_router(estado_pedido, prefix="/api/v1")
 print("[OK] EstadoPedido router incluido")
-app.include_router(pago)
+app.include_router(pago, prefix="/api/v1")
 print("[OK] Pago router incluido")
 app.include_router(ws)
 print("[OK] WebSocket router incluido")

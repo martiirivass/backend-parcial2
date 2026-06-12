@@ -1,17 +1,12 @@
-from datetime import datetime, timezone
 from typing import Annotated, Optional
 
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Query
 )
 
-from sqlmodel import (
-    Session,
-    select
-)
+from sqlmodel import Session
 
 from app.db.database import get_session
 
@@ -25,9 +20,8 @@ from app.auth.permissions import (
     require_roles
 )
 
-from app.models.usuario import Usuario
-from app.models.usuario_rol_model import UsuarioRol
-from app.models.rol import Rol
+from app.services.admin_service import AdminService
+from app.core.unit_of_work import UnitOfWork
 
 router = APIRouter(
     prefix="/admin",
@@ -47,21 +41,13 @@ def listar_usuarios(
     current_user=Depends(require_roles("ADMIN"))
 ):
 
-    statement = select(Usuario)
+    service = AdminService(db)
 
-    if rol_codigo:
-        statement = statement.join(
-            UsuarioRol
-        ).where(
-            UsuarioRol.rol_codigo == rol_codigo
-        )
-
-    usuarios = db.exec(statement).all()
-
-    return {
-        "data": usuarios[offset: offset + limit],
-        "total": len(usuarios)
-    }
+    return service.listar_usuarios(
+        limit,
+        offset,
+        rol_codigo=rol_codigo
+    )
 
 
 @router.get(
@@ -74,18 +60,11 @@ def obtener_usuario(
     current_user=Depends(require_roles("ADMIN"))
 ):
 
-    usuario = db.get(
-        Usuario,
+    service = AdminService(db)
+
+    return service.obtener_usuario(
         usuario_id
     )
-
-    if not usuario:
-        raise HTTPException(
-            status_code=404,
-            detail="Usuario no encontrado"
-        )
-
-    return usuario
 
 
 @router.put(
@@ -99,45 +78,14 @@ def actualizar_usuario(
     current_user=Depends(require_roles("ADMIN"))
 ):
 
-    usuario = db.get(
-        Usuario,
-        usuario_id
-    )
+    service = AdminService(db)
 
-    if not usuario:
-        raise HTTPException(
-            status_code=404,
-            detail="Usuario no encontrado"
+    with UnitOfWork(db):
+
+        usuario = service.actualizar_usuario(
+            usuario_id,
+            datos
         )
-
-    update_data = datos.model_dump(
-        exclude_unset=True
-    )
-
-    if "rol_ids" in update_data:
-
-        roles = []
-
-        for rid in update_data["rol_ids"]:
-
-            rol = db.get(
-                Rol,
-                rid
-            )
-
-            if rol:
-                roles.append(rol)
-
-        usuario.roles = roles
-
-        del update_data["rol_ids"]
-
-    for key, value in update_data.items():
-        setattr(usuario, key, value)
-
-    db.add(usuario)
-
-    db.commit()
 
     db.refresh(usuario)
 
@@ -154,24 +102,13 @@ def eliminar_usuario(
     current_user=Depends(require_roles("ADMIN"))
 ):
 
-    usuario = db.get(
-        Usuario,
-        usuario_id
-    )
+    service = AdminService(db)
 
-    if not usuario:
-        raise HTTPException(
-            status_code=404,
-            detail="Usuario no encontrado"
+    with UnitOfWork(db):
+
+        service.eliminar_usuario(
+            usuario_id
         )
-
-    usuario.deleted_at = datetime.now(
-        timezone.utc
-    )
-
-    db.add(usuario)
-
-    db.commit()
 
 
 @router.patch(
@@ -184,22 +121,13 @@ def restaurar_usuario(
     current_user=Depends(require_roles("ADMIN"))
 ):
 
-    usuario = db.get(
-        Usuario,
-        usuario_id
-    )
+    service = AdminService(db)
 
-    if not usuario:
-        raise HTTPException(
-            status_code=404,
-            detail="Usuario no encontrado"
+    with UnitOfWork(db):
+
+        usuario = service.restaurar_usuario(
+            usuario_id
         )
-
-    usuario.deleted_at = None
-
-    db.add(usuario)
-
-    db.commit()
 
     db.refresh(usuario)
 

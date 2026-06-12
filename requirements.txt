@@ -10,3 +10,4 @@ sqlmodel==0.0.38
 uvicorn==0.44.0
 python-multipart==0.0.20
 mercadopago==2.3.0
+cloudinary==1.44.2

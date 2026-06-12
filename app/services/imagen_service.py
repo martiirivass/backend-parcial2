@@ -11,7 +11,12 @@ from fastapi import (
 from app.core.config import (
     UPLOADS_DIR,
     MAX_IMAGE_SIZE,
-    ALLOWED_IMAGE_EXTENSIONS
+    ALLOWED_IMAGE_EXTENSIONS,
+    cloudinary_configurado
+)
+
+from app.services.cloudinary_service import (
+    CloudinaryService
 )
 
 logger = logging.getLogger(__name__)
@@ -77,6 +82,7 @@ class ImagenService:
         archivo: UploadFile
     ) -> str:
 
+        # ── Pre-validación (siempre, antes de cualquier storage) ──
         extension = cls.validar_extension(
             archivo.filename
         )
@@ -87,14 +93,35 @@ class ImagenService:
             contenido
         )
 
-        UPLOADS_DIR.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
         nombre_archivo = cls.generar_nombre(
             entidad_id,
             extension
+        )
+
+        # ── Cloudinary (si configurado) ──
+        if cloudinary_configurado():
+
+            url = CloudinaryService.subir(
+                contenido,
+                public_id=nombre_archivo,
+                folder="foodstore"
+            )
+
+            logger.info(
+                f"Imagen subida a Cloudinary: {url}"
+            )
+
+            return url
+
+        # ── Fallback local ──
+        logger.info(
+            "Cloudinary no configurado, "
+            "usando almacenamiento local"
+        )
+
+        UPLOADS_DIR.mkdir(
+            parents=True,
+            exist_ok=True
         )
 
         ruta_archivo = (
@@ -110,7 +137,7 @@ class ImagenService:
             buffer.write(contenido)
 
         logger.info(
-            f"Imagen guardada correctamente: "
+            f"Imagen guardada localmente: "
             f"{ruta_archivo}"
         )
 

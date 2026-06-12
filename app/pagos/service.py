@@ -212,7 +212,7 @@ class PagoService:
             logger.warning(f"Pedido {pedido_id} no encontrado al marcar pagado")
             return
 
-        if pedido.estado_codigo in ("CONFIRMADO", "EN_PREP", "EN_CAMINO", "ENTREGADO"):
+        if pedido.estado_codigo in ("CONFIRMADO", "EN_PREP", "ENTREGADO"):
             logger.info(
                 f"Pedido {pedido_id} ya estaba en estado "
                 f"'{pedido.estado_codigo}' — no se modifica"
