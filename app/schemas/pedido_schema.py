@@ -22,6 +22,13 @@ class PedidoCreate(SQLModel):
     forma_pago_codigo: str
     direccion_id: Optional[int] = None
     items: List[DetallePedidoCreate]
+<<<<<<< HEAD
+=======
+    referencia_pago: Optional[str] = Field(
+        default=None, max_length=200,
+        description="Referencia del pago (CBU para transferencia, últimos 4 dígitos para tarjeta)"
+    )
+>>>>>>> 53b31fe58213626f62945aebb5ef0d515140b85b
 
     @field_validator("items")
     def validar_items(cls, v):
@@ -33,6 +40,12 @@ class PedidoCreate(SQLModel):
 class AvanceEstadoRequest(SQLModel):
     estado_codigo: str
 
+<<<<<<< HEAD
+=======
+class CancelarPedidoRequest(SQLModel):
+    motivo: str
+
+>>>>>>> 53b31fe58213626f62945aebb5ef0d515140b85b
 
 class DetallePedidoRead(SQLModel):
     pedido_id: int

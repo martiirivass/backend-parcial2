@@ -13,12 +13,34 @@ class LoginRequest(BaseModel):
 
 
 class RolInfo(BaseModel):
-    id: int
     codigo: str
     nombre: str
+
+
+class RegisterResponse(BaseModel):
+    id: int
+    nombre: str
+    email: str
+
+
+class LoginResponse(BaseModel):
+    message: str
+
+
+class RefreshResponse(BaseModel):
+    message: str
+
+
+class LogoutResponse(BaseModel):
+    message: str
+
 
 class UserResponse(BaseModel):
     id: int
     nombre: str
     email: str
     roles: list[RolInfo] = []
+
+
+class MeResponse(UserResponse):
+    pass

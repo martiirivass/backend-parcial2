@@ -20,12 +20,13 @@ class CategoriaBase(SQLModel):
 
 #Para crear categorias, reutiliza categoriaBase
 class CategoriaCreate(CategoriaBase):
-    pass
+    parent_id: Optional[int] = None
 
 #Para actualizar categorias, todos los campos son opcionales
 class CategoriaUpdate(SQLModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
+    parent_id: Optional[int] = None
 
 #Para leer categorias, incluye el id
 class CategoriaRead(CategoriaBase):

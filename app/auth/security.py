@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, UTC
 import jwt
 from passlib.context import CryptContext
 
+
 SECRET_KEY = "secret"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -30,7 +31,6 @@ def verify_password(
 
 
 def hash_token(token: str) -> str:
-    """SHA-256 del token para almacenar como CHAR(64)."""
     return hashlib.sha256(token.encode()).hexdigest()
 
 

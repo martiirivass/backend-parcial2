@@ -11,11 +11,18 @@ class Pago(SQLModel, table=True):
     __tablename__ = "pagos"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    pedido_id: int = Field(foreign_key="pedidos.id")
-    monto: float
-    forma_pago_codigo: str = Field(foreign_key="formas_pago.codigo", max_length=20)
-    referencia: Optional[str] = Field(default=None, max_length=100)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    pedido_id: int = Field(foreign_key="pedidos.id", index=True)
+
+    mp_payment_id: Optional[int] = Field(default=None, index=True)
+    mp_status: Optional[str] = Field(default=None, max_length=20)
+
+    external_reference: str = Field(unique=True, max_length=100, index=True)
+    idempotency_key: Optional[str] = Field(default=None, max_length=100)
+
+    transaction_amount: Optional[float] = Field(default=None)
+    date_approved: Optional[datetime] = Field(default=None)
+
+    creado_en: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    actualizado_en: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     pedido: "Pedido" = Relationship(back_populates="pagos")

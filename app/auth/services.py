@@ -1,16 +1,16 @@
 from fastapi import HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from app.auth.security import (
     hash_password,
     verify_password,
     create_access_token,
-    hash_password
 )
 
 from app.models.usuario import Usuario
-from app.models.rol import Rol
 from app.models.usuario_rol_model import UsuarioRol
+
+from app.repositories.auth_repository import AuthRepository
 
 
 def login_user(
@@ -18,11 +18,11 @@ def login_user(
     password: str,
     session: Session
 ):
-    user = session.exec(
-        select(Usuario).where(
-            Usuario.email == email
-        )
-    ).first()
+    auth_repository = AuthRepository(session)
+
+    user = auth_repository.get_user_by_email(
+        email
+    )
 
     if not user:
         raise HTTPException(
@@ -52,10 +52,10 @@ def register_user(
     password: str,
     session: Session
 ):
-    # Verificar si el email ya esta registrado
-    existente = session.exec(
-        select(Usuario).where(Usuario.email == email)
-    ).first()
+
+    auth_repository = AuthRepository(session)
+
+    existente = auth_repository.get_user_by_email(email)
 
     if existente:
         raise HTTPException(
@@ -63,34 +63,33 @@ def register_user(
             detail="El email ya esta registrado"
         )
 
-    # Buscar el rol CLIENT por defecto
-    rol_cliente = session.exec(
-        select(Rol).where(Rol.codigo == "CLIENT")
-    ).first()
+    rol_cliente = auth_repository.get_client_role()
 
     if not rol_cliente:
         raise HTTPException(
             status_code=500,
-            detail="Error de configuracion: rol CLIENT no encontrado"
+            detail="Error de configuración: rol CLIENT no encontrado"
         )
 
-    # Crear el usuario
     user = Usuario(
         nombre=nombre,
-        apellido="",  # Opcional por ahora
+        apellido="",
         email=email,
         password_hash=hash_password(password),
     )
 
-    session.add(user)
+    auth_repository.add(user)
+
     session.flush()
 
-    # Asigno el rol CLIENT por defecto via UsuarioRol
-    ur = UsuarioRol(usuario_id=user.id, rol_codigo=rol_cliente.codigo)
-    session.add(ur)
+    usuario_rol = UsuarioRol(
+        usuario_id=user.id,
+        rol_codigo=rol_cliente.codigo
+    )
 
-    session.commit()
-    session.refresh(user)
+    auth_repository.add_user_role(
+        usuario_rol
+    )
 
     return user
 

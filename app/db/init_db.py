@@ -1,7 +1,6 @@
 from sqlmodel import SQLModel
 from app.db.database import engine
 
-# Importo todos los modelos para que SQLModel los cree
 from app.models.producto_model import Producto
 from app.models.categoria_model import Categoria
 from app.models.ingrediente_model import Ingrediente
@@ -22,8 +21,11 @@ from app.models.refresh_token_model import RefreshToken
 
 
 def init_db():
+    print("[init_db] Starting...")
+
     SQLModel.metadata.create_all(engine)
 
-    # Seed data obligatorio
     from app.seed import run_seed
     run_seed()
+
+    print("[init_db] Seed OK")

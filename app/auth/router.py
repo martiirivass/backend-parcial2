@@ -1,17 +1,58 @@
-from fastapi import APIRouter, Depends, Response, HTTPException, Request
-from sqlmodel import Session
-
-from app.auth.schemas import LoginRequest, RegisterRequest, UserResponse
-from app.auth.services import login_user, register_user
-from app.auth.security import create_access_token, hash_token, SECRET_KEY, ALGORITHM
-from app.db.database import get_session
-from app.repositories.refresh_token_repository import RefreshTokenRepository
-from app.models.refresh_token_model import RefreshToken
-from app.auth.dependencies import get_current_user
-from app.models.usuario import Usuario
 from datetime import datetime, timedelta, UTC
 import secrets
 import jwt
+
+from fastapi import (
+    APIRouter,
+    Depends,
+    Response,
+    HTTPException,
+    Request
+)
+
+from sqlmodel import Session
+
+from app.auth.schemas import (
+    LoginRequest,
+    RegisterRequest,
+    RegisterResponse,
+    LoginResponse,
+    RefreshResponse,
+    LogoutResponse,
+    MeResponse
+)
+
+from app.auth.services import (
+    login_user,
+    register_user
+)
+
+from app.auth.security import (
+    create_access_token,
+    hash_token,
+    SECRET_KEY,
+    ALGORITHM
+)
+
+from app.db.database import get_session
+
+from app.repositories.refresh_token_repository import (
+    RefreshTokenRepository
+)
+
+from app.models.refresh_token_model import (
+    RefreshToken
+)
+
+from app.auth.dependencies import (
+    get_current_user
+)
+
+from app.models.usuario import Usuario
+
+from app.core.unit_of_work import (
+    UnitOfWork
+)
 
 router = APIRouter(
     prefix="/auth",
@@ -19,45 +60,72 @@ router = APIRouter(
 )
 
 
-@router.post("/register", response_model=UserResponse, status_code=201)
+@router.post(
+    "/register",
+    response_model=RegisterResponse,
+    status_code=201,
+    summary="Registrar usuario cliente"
+)
 def register(
     data: RegisterRequest,
     session: Session = Depends(get_session)
 ):
-    user = register_user(
-        nombre=data.nombre,
-        email=data.email,
-        password=data.password,
-        session=session
-    )
-    return user
+
+    with UnitOfWork(session):
+
+        user = register_user(
+            nombre=data.nombre,
+            email=data.email,
+            password=data.password,
+            session=session
+        )
+
+    return {
+        "id": user.id,
+        "nombre": user.nombre,
+        "email": user.email
+    }
 
 
-@router.post("/login")
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    status_code=200,
+    summary="Iniciar sesión"
+)
 def login(
     data: LoginRequest,
     response: Response,
     session: Session = Depends(get_session)
 ):
-    token = login_user(
-        email=data.email,
-        password=data.password,
-        session=session
-    )
 
-    # Decodifico el user ID del token para crear el refresh
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    usuario_id = int(payload.get("sub"))
+    with UnitOfWork(session):
 
-    # Creo refresh token (almaceno SHA-256, devuelvo raw)
-    refresh_token_str = secrets.token_urlsafe(64)
-    refresh = RefreshToken(
-        usuario_id=usuario_id,
-        token_hash=hash_token(refresh_token_str),
-        expires_at=datetime.now(UTC) + timedelta(days=7)
-    )
-    session.add(refresh)
-    session.commit()
+        token = login_user(
+            email=data.email,
+            password=data.password,
+            session=session
+        )
+
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        usuario_id = int(
+            payload.get("sub")
+        )
+
+        refresh_token_str = secrets.token_urlsafe(64)
+
+        refresh = RefreshToken(
+            usuario_id=usuario_id,
+            token_hash=hash_token(refresh_token_str),
+            expires_at=datetime.now(UTC) + timedelta(days=7)
+        )
+
+        session.add(refresh)
 
     response.set_cookie(
         key="access_token",
@@ -73,7 +141,7 @@ def login(
         httponly=True,
         secure=False,
         samesite="lax",
-        max_age=604800  # 7 días
+        max_age=604800
     )
 
     return {
@@ -81,37 +149,59 @@ def login(
     }
 
 
-@router.post("/refresh")
+@router.post(
+    "/refresh",
+    response_model=RefreshResponse,
+    status_code=200,
+    summary="Renovar access token"
+)
 def refresh(
     request: Request,
     response: Response,
     session: Session = Depends(get_session)
 ):
-    refresh_token_str = request.cookies.get("refresh_token")
+
+    refresh_token_str = request.cookies.get(
+        "refresh_token"
+    )
+
     if not refresh_token_str:
-        raise HTTPException(status_code=400, detail="Refresh token requerido")
+        raise HTTPException(
+            status_code=400,
+            detail="Refresh token requerido"
+        )
 
     repo = RefreshTokenRepository(session)
-    stored = repo.get_valid_token(hash_token(refresh_token_str))
-    if not stored:
-        raise HTTPException(status_code=401, detail="Refresh token inválido o expirado")
 
-    # Revoco el token usado (rotación)
-    stored.revoked_at = datetime.now(UTC)
-    session.add(stored)
-
-    # Genero nuevo access token
-    new_token = create_access_token({"sub": str(stored.usuario_id)})
-
-    # Genero nuevo refresh token (hash SHA-256)
-    new_raw = secrets.token_urlsafe(64)
-    new_refresh = RefreshToken(
-        usuario_id=stored.usuario_id,
-        token_hash=hash_token(new_raw),
-        expires_at=datetime.now(UTC) + timedelta(days=7)
+    stored = repo.get_valid_token(
+        hash_token(refresh_token_str)
     )
-    session.add(new_refresh)
-    session.commit()
+
+    if not stored:
+        raise HTTPException(
+            status_code=401,
+            detail="Refresh token inválido o expirado"
+        )
+
+    with UnitOfWork(session):
+
+        stored.revoked_at = datetime.now(UTC)
+
+        session.add(stored)
+
+        new_token = create_access_token({
+            "sub": str(stored.usuario_id)
+        })
+
+        new_raw = secrets.token_urlsafe(64)
+
+        new_refresh = RefreshToken(
+            usuario_id=stored.usuario_id,
+            token_hash=hash_token(new_raw),
+            expires_at=datetime.now(UTC) + timedelta(days=7)
+        )
+
+        session.add(new_refresh)
 
     response.set_cookie(
         key="access_token",
@@ -121,13 +211,14 @@ def refresh(
         samesite="lax",
         max_age=1800
     )
+
     response.set_cookie(
         key="refresh_token",
         value=new_raw,
         httponly=True,
         secure=False,
         samesite="lax",
-        max_age=604800  # 7 días
+        max_age=604800
     )
 
     return {
@@ -135,25 +226,42 @@ def refresh(
     }
 
 
-@router.get("/me")
+@router.get(
+    "/me",
+    response_model=MeResponse,
+    summary="Obtener usuario autenticado"
+)
 def me(
     current_user: Usuario = Depends(get_current_user)
 ):
-    """Devuelve los datos del usuario autenticado."""
+
     return {
         "id": current_user.id,
         "nombre": current_user.nombre,
         "email": current_user.email,
         "roles": [
-            {"codigo": ur.rol.codigo, "nombre": ur.rol.nombre}
+            {
+                "codigo": ur.rol.codigo,
+                "nombre": ur.rol.nombre
+            }
             for ur in current_user.usuario_roles
         ]
     }
 
 
-@router.post("/logout")
-def logout(response: Response):
-    """Limpia las cookies de autenticación."""
+@router.post(
+    "/logout",
+    response_model=LogoutResponse,
+    status_code=200,
+    summary="Cerrar sesión"
+)
+def logout(
+    response: Response
+):
+
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
-    return {"message": "Sesión cerrada"}
+
+    return {
+        "message": "Sesión cerrada"
+    }

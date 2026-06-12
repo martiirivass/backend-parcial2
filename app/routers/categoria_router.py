@@ -1,5 +1,17 @@
-from fastapi import APIRouter, Query, Depends, UploadFile, File
-from typing import Annotated, List, Optional
+from fastapi import (
+    APIRouter,
+    Query,
+    Depends,
+    UploadFile,
+    File
+)
+
+from typing import (
+    Annotated,
+    List,
+    Optional
+)
+
 from sqlmodel import Session
 
 from app.db.database import get_session
@@ -11,8 +23,17 @@ from app.schemas.categoria_schema import (
     CategoriaTree
 )
 
-from app.services.categoria_service import CategoriaService
-from app.auth.permissions import require_roles
+from app.services.categoria_service import (
+    CategoriaService
+)
+
+from app.auth.permissions import (
+    require_roles
+)
+
+from app.core.unit_of_work import (
+    UnitOfWork
+)
 
 router = APIRouter(
     prefix="/categorias",
@@ -20,16 +41,33 @@ router = APIRouter(
 )
 
 
-# Crear categoría (solo ADMIN)
-@router.post("/", response_model=CategoriaRead, status_code=201)
+# Crear categoría
+@router.post(
+    "/",
+    response_model=CategoriaRead,
+    status_code=201
+)
 def crear(
     categoria: CategoriaCreate,
     db: Session = Depends(get_session),
-    current_user = Depends(require_roles("ADMIN"))
+    current_user=Depends(
+        require_roles("ADMIN")
+    )
 ):
+
     service = CategoriaService(db)
 
-    return service.crear_categoria(categoria)
+    with UnitOfWork(db):
+
+        nueva_categoria = service.crear_categoria(
+            categoria
+        )
+
+    db.refresh(
+        nueva_categoria
+    )
+
+    return nueva_categoria
 
 
 # Listar categorías con filtro por parent_id (publico)
@@ -37,67 +75,130 @@ def crear(
 def listar(
     limit: Annotated[int, Query(le=100)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
-    parent_id: Optional[int] = Query(None, description="Filtrar por categoria padre"),
+    parent_id: Optional[int] = Query(
+        None,
+        description="Filtrar por categoria padre"
+    ),
     db: Session = Depends(get_session)
 ):
+
     service = CategoriaService(db)
 
-    return service.listar_categorias(limit, offset, parent_id=parent_id)
+    return service.listar_categorias(
+        limit,
+        offset,
+        parent_id=parent_id
+    )
 
 
-# Arbol de categorias (consulta recursiva)
-@router.get("/tree", response_model=List[CategoriaTree])
+# Árbol de categorías
+@router.get(
+    "/tree",
+    response_model=List[CategoriaTree]
+)
 def get_tree(
     db: Session = Depends(get_session)
 ):
+
     service = CategoriaService(db)
+
     return service.get_tree()
 
 
-# Obtener categoría (publico)
-@router.get("/{categoria_id}", response_model=CategoriaRead)
+# Obtener categoría
+@router.get(
+    "/{categoria_id}",
+    response_model=CategoriaRead
+)
 def obtener(
     categoria_id: int,
     db: Session = Depends(get_session)
 ):
+
     service = CategoriaService(db)
 
-    return service.obtener_categoria(categoria_id)
+    return service.obtener_categoria(
+        categoria_id
+    )
 
 
-# Actualizar categoría (solo ADMIN)
-@router.put("/{categoria_id}", response_model=CategoriaRead)
+# Actualizar categoría
+@router.put(
+    "/{categoria_id}",
+    response_model=CategoriaRead
+)
 def actualizar(
     categoria_id: int,
     datos: CategoriaUpdate,
     db: Session = Depends(get_session),
-    current_user = Depends(require_roles("ADMIN"))
+    current_user=Depends(
+        require_roles("ADMIN")
+    )
 ):
+
     service = CategoriaService(db)
 
-    return service.actualizar_categoria(categoria_id, datos)
+    with UnitOfWork(db):
+
+        categoria = service.actualizar_categoria(
+            categoria_id,
+            datos
+        )
+
+    db.refresh(
+        categoria
+    )
+
+    return categoria
 
 
-# Eliminar categoría (solo ADMIN)
-@router.delete("/{categoria_id}", status_code=204)
+# Eliminar categoría
+@router.delete(
+    "/{categoria_id}",
+    status_code=204
+)
 def eliminar(
     categoria_id: int,
     db: Session = Depends(get_session),
-    current_user = Depends(require_roles("ADMIN"))
+    current_user=Depends(
+        require_roles("ADMIN")
+    )
 ):
+
     service = CategoriaService(db)
 
-    service.eliminar_categoria(categoria_id)
+    with UnitOfWork(db):
+
+        service.eliminar_categoria(
+            categoria_id
+        )
 
 
-# Subir imagen de categoría (solo ADMIN)
-@router.post("/{categoria_id}/imagen", response_model=CategoriaRead)
+# Subir imagen
+@router.post(
+    "/{categoria_id}/imagen",
+    response_model=CategoriaRead
+)
 def subir_imagen(
     categoria_id: int,
     archivo: UploadFile = File(...),
     db: Session = Depends(get_session),
-    current_user = Depends(require_roles("ADMIN"))
+    current_user=Depends(
+        require_roles("ADMIN")
+    )
 ):
+
     service = CategoriaService(db)
 
-    return service.subir_imagen(categoria_id, archivo)
+    with UnitOfWork(db):
+
+        categoria = service.subir_imagen(
+            categoria_id,
+            archivo
+        )
+
+    db.refresh(
+        categoria
+    )
+
+    return categoria
