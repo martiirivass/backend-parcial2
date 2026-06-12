@@ -1,8 +1,5 @@
 from typing import Optional, List
-<<<<<<< HEAD
-=======
 
->>>>>>> 53b31fe58213626f62945aebb5ef0d515140b85b
 from sqlmodel import SQLModel
 
 
@@ -19,11 +16,8 @@ class AdminUserRead(SQLModel):
     apellido: str
     email: str
     deleted_at: Optional[str] = None
-<<<<<<< HEAD
-=======
 
 
 class AdminUsersListResponse(SQLModel):
     data: List[AdminUserRead]
     total: int
->>>>>>> 53b31fe58213626f62945aebb5ef0d515140b85b
