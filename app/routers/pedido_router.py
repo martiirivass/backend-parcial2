@@ -7,6 +7,7 @@ from app.db.database import get_session
 from app.schemas.pedido_schema import (
     PedidoCreate,
     PedidoReadWithDetails,
+    PedidoListResponse,
     AvanceEstadoRequest
 )
 
@@ -58,7 +59,7 @@ def crear_pedido(
 # Listar pedidos
 @router.get(
     "/",
-    response_model=list[PedidoReadWithDetails],
+    response_model=PedidoListResponse,
     summary="Listar pedidos"
 )
 def listar_pedidos(

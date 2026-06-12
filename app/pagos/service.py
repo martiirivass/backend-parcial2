@@ -90,7 +90,6 @@ class PagoService:
                 "failure": f"http://localhost:5174/pago-fallido?pedido_id={pedido.id}",
                 "pending": f"http://localhost:5174/pago-pendiente?pedido_id={pedido.id}"
             },
-            "auto_return": "approved",
         }
 
         if settings.MP_NOTIFICATION_URL:
@@ -98,13 +97,8 @@ class PagoService:
 
         idempotency_key = str(uuid.uuid4())
 
-        request_options = {
-            "idempotency_key": idempotency_key
-        }
-
         response = self.sdk.preference().create(
-            preference_data,
-            request_options
+            preference_data
         )
 
         logger.info("Preferencia creada en Mercado Pago")
@@ -258,9 +252,66 @@ class PagoService:
 
         pago = pagos[-1]
 
+        if pago.mp_status in ("pending", None):
+            self._sincronizar_con_mp(pago)
+
         return PagoStatusResponse(
             pedido_id=pedido_id,
             payment_id=pago.mp_payment_id,
             status=pago.mp_status,
             transaction_amount=pago.transaction_amount,
         )
+
+    def _sincronizar_con_mp(self, pago):
+        logger.info(f"Sincronizando pago {pago.id} con MP API")
+        try:
+            headers = {"Authorization": f"Bearer {settings.MP_ACCESS_TOKEN}"}
+
+            if pago.mp_payment_id:
+                resp = requests.get(
+                    f"{MP_API_BASE}/v1/payments/{pago.mp_payment_id}",
+                    headers=headers, timeout=15
+                )
+                if resp.status_code != 200:
+                    logger.warning(f"Error consultando payment: {resp.status_code}")
+                    return
+                data = resp.json()
+            else:
+                resp = requests.get(
+                    f"{MP_API_BASE}/v1/payments/search",
+                    headers=headers,
+                    params={"external_reference": pago.external_reference},
+                    timeout=15
+                )
+                if resp.status_code != 200:
+                    logger.warning(f"Error buscando pago en MP: {resp.status_code}")
+                    return
+                results = resp.json().get("results", [])
+                if not results:
+                    logger.info("No se encontraron pagos en MP para esta referencia")
+                    return
+                data = results[0]
+                pago.mp_payment_id = data.get("id")
+            mp_status = data.get("status")
+            transaction_amount = data.get("transaction_amount")
+            date_approved = data.get("date_approved")
+
+            if mp_status:
+                pago.mp_status = mp_status
+            if transaction_amount is not None:
+                pago.transaction_amount = transaction_amount
+            if date_approved:
+                try:
+                    pago.date_approved = datetime.fromisoformat(date_approved.replace("Z", "+00:00"))
+                except (ValueError, AttributeError):
+                    pass
+            pago.actualizado_en = datetime.now(timezone.utc)
+            self.repo.update(pago)
+            self.db.commit()
+
+            if mp_status == "approved":
+                self._marcar_pedido_pagado(pago.pedido_id)
+
+            logger.info(f"Pago sincronizado — mp_status: {mp_status}")
+        except requests.RequestException as e:
+            logger.error(f"Error de conexión con MP API: {e}")

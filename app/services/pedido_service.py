@@ -15,6 +15,7 @@ from app.repositories.producto_repository import ProductoRepository
 from app.repositories.estado_pedido_repository import EstadoPedidoRepository
 from app.repositories.historial_repository import HistorialRepository
 from app.repositories.pago_repository import PagoRepository
+from app.repositories.direccion_repository import DireccionEntregaRepository
 
 if TYPE_CHECKING:
     from app.core.ws_manager import WSManager
@@ -47,6 +48,7 @@ class PedidoService:
         self.historial_repo = HistorialRepository(db)
 
         self.pago_repo = PagoRepository(db)
+        self.direccion_repo = DireccionEntregaRepository(db)
 
     # ── WebSocket event helpers ────────────────────────────────────────
 
@@ -154,6 +156,15 @@ class PedidoService:
             )
 
             detalles.append(detalle)
+
+        # Validar dirección si se especificó
+        if datos.direccion_id is not None:
+            direccion = self.direccion_repo.get_by_id(datos.direccion_id)
+            if not direccion:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Dirección de entrega no encontrada"
+                )
 
         costo_envio = 50.0
 

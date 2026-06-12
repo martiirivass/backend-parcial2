@@ -29,34 +29,9 @@ class PagoService:
                 detail="Pedido no encontrado"
             )
 
-        pagos_actuales = self.repo.get_by_pedido(
-            datos.pedido_id
-        )
-
-        total_pagado = sum(
-            pago.monto
-            for pago in pagos_actuales
-        )
-
-        saldo_pendiente = (
-            pedido.total - total_pagado
-        )
-
-        if datos.monto > saldo_pendiente:
-
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"El pago excede el saldo pendiente "
-                    f"({saldo_pendiente:.2f})"
-                )
-            )
-
         pago = Pago(
             pedido_id=datos.pedido_id,
-            monto=datos.monto,
-            forma_pago_codigo=datos.forma_pago_codigo,
-            referencia=datos.referencia
+            external_reference=str(datos.pedido_id),
         )
 
         self.repo.create(pago)

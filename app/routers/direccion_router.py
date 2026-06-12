@@ -35,9 +35,9 @@ def crear(
             datos
         )
 
-        db.refresh(direccion)
+    db.refresh(direccion)
 
-        return direccion
+    return direccion
 
 
 @router.get("/", response_model=list[DireccionEntregaRead])

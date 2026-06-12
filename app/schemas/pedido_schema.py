@@ -72,3 +72,8 @@ class PedidoReadWithDetails(PedidoRead):
     detalles: List[DetallePedidoRead] = []
     historial_estados: List[HistorialEstadoRead] = []
     pagos: List[PagoRead] = []
+
+
+class PedidoListResponse(SQLModel):
+    data: List[PedidoReadWithDetails]
+    total: int
