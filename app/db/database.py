@@ -9,7 +9,7 @@ print("DATABASE_URL ENV =", getenv("DATABASE_URL"))
 
 DATABASE_URL = getenv(
     "DATABASE_URL",
-    "postgresql+psycopg://postgres:postgres@localhost:5432/parcial_prog4"
+    "postgresql+psycopg://postgres:postgres@localhost:5433/tpi_test"
 )
 
 print("DATABASE_URL FINAL =", DATABASE_URL)

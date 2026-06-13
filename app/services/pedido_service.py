@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 TRANSICIONES = {
     "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
     "CONFIRMADO": ["EN_PREP", "CANCELADO"],
-    "EN_PREP": ["ENTREGADO", "CANCELADO"],
+    "EN_PREP": ["EN_CAMINO", "CANCELADO"],
+    "EN_CAMINO": ["ENTREGADO", "CANCELADO"],
     "ENTREGADO": [],
     "CANCELADO": [],
 }
@@ -141,6 +142,12 @@ class PedidoService:
                     detail=f"Producto ID {item.producto_id} no encontrado"
                 )
 
+            if producto.stock_cantidad < item.cantidad:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Stock insuficiente para {producto.nombre}"
+                )
+
             item_subtotal = (
                 producto.precio_base * item.cantidad
             )
@@ -213,7 +220,7 @@ class PedidoService:
 
             self.pago_repo.create(pago)
 
-        # Acumular evento WebSocket (broadcast post-UoW en el router)
+        # Acumular evento WebSocket
         self._add_event(
             pedido.id,
             None,

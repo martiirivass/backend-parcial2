@@ -80,37 +80,43 @@ def seed_unidades_medida(session):
 
 def seed_estados_pedido(session):
     estados_data = [
-        {
-            "codigo": "PENDIENTE",
-            "descripcion": "Pedido creado y pendiente de confirmación",
-            "orden": 1,
-            "es_terminal": False
-        },
-        {
-            "codigo": "CONFIRMADO",
-            "descripcion": "Pedido confirmado",
-            "orden": 2,
-            "es_terminal": False
-        },
-        {
-            "codigo": "EN_PREP",
-            "descripcion": "Pedido en preparación",
-            "orden": 3,
-            "es_terminal": False
-        },
-        {
-            "codigo": "ENTREGADO",
-            "descripcion": "Pedido entregado",
-            "orden": 4,
-            "es_terminal": True
-        },
-        {
-            "codigo": "CANCELADO",
-            "descripcion": "Pedido cancelado",
-            "orden": 5,
-            "es_terminal": True
-        }
-    ]
+    {
+        "codigo": "PENDIENTE",
+        "descripcion": "Pedido creado y pendiente de confirmación",
+        "orden": 1,
+        "es_terminal": False
+    },
+    {
+        "codigo": "CONFIRMADO",
+        "descripcion": "Pedido confirmado",
+        "orden": 2,
+        "es_terminal": False
+    },
+    {
+        "codigo": "EN_PREP",
+        "descripcion": "Pedido en preparación",
+        "orden": 3,
+        "es_terminal": False
+    },
+    {
+        "codigo": "EN_CAMINO",
+        "descripcion": "Pedido en camino al cliente",
+        "orden": 4,
+        "es_terminal": False
+    },
+    {
+        "codigo": "ENTREGADO",
+        "descripcion": "Pedido entregado",
+        "orden": 5,
+        "es_terminal": True
+    },
+    {
+        "codigo": "CANCELADO",
+        "descripcion": "Pedido cancelado",
+        "orden": 6,
+        "es_terminal": True
+    }
+]
 
     for e in estados_data:
         existe = session.exec(
