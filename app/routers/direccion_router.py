@@ -89,6 +89,27 @@ def actualizar(
         return direccion
 
 
+@router.patch("/{direccion_id}/principal", response_model=DireccionEntregaRead)
+def marcar_principal(
+    direccion_id: int,
+    db: Session = Depends(get_session),
+    current_user: Usuario = Depends(get_current_user)
+):
+
+    with UnitOfWork(db):
+
+        service = DireccionEntregaService(db)
+
+        direccion = service.marcar_principal(
+            direccion_id,
+            current_user.id
+        )
+
+        db.refresh(direccion)
+
+        return direccion
+
+
 @router.delete("/{direccion_id}", status_code=204)
 def eliminar(
     direccion_id: int,

@@ -375,7 +375,7 @@ class PedidoService:
             "total": len(pedidos)
         }
 
-    def obtener_pedido(self, pedido_id):
+    def obtener_pedido(self, pedido_id, usuario_id=None, es_cliente=False):
 
         pedido = self.repo.get_by_id(pedido_id)
 
@@ -384,6 +384,13 @@ class PedidoService:
             raise HTTPException(
                 status_code=404,
                 detail="Pedido no encontrado"
+            )
+
+        if es_cliente and pedido.usuario_id != usuario_id:
+
+            raise HTTPException(
+                status_code=403,
+                detail="No tienes permiso para ver este pedido"
             )
 
         return pedido

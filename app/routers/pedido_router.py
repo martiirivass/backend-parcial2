@@ -103,7 +103,11 @@ def obtener_pedido(
     service = PedidoService(db)
 
     return service.obtener_pedido(
-        pedido_id
+        pedido_id,
+        current_user.id,
+        current_user.tiene_rol("CLIENT")
+        and not current_user.tiene_rol("ADMIN")
+        and not current_user.tiene_rol("PEDIDOS")
     )
 
 
