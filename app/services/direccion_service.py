@@ -69,6 +69,25 @@ class DireccionEntregaService:
 
         return direccion
 
+    def marcar_principal(self, direccion_id, usuario_id):
+
+        direccion = self.obtener_direccion(direccion_id, usuario_id)
+
+        if direccion.es_principal:
+            return direccion
+
+        direcciones = self.repo.get_by_usuario(usuario_id)
+
+        for d in direcciones:
+            if d.es_principal:
+                d.es_principal = False
+                self.repo.update(d)
+
+        direccion.es_principal = True
+        self.repo.update(direccion)
+
+        return direccion
+
     def eliminar_direccion(self, direccion_id, usuario_id):
 
         direccion = self.repo.get_by_id(direccion_id)

@@ -19,6 +19,9 @@ ALLOWED_IMAGE_EXTENSIONS = {
 
 class Settings(BaseSettings):
 
+    # JWT
+    SECRET_KEY: str = "secret"
+
     # Mercado Pago
     MP_ACCESS_TOKEN: str | None = None
     MP_PUBLIC_KEY: str | None = None
