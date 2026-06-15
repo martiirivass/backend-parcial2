@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.models.usuario import Usuario
 from app.models.usuario_rol_model import UsuarioRol
@@ -45,23 +45,30 @@ class AdminService:
         rol_codigo: Optional[str] = None
     ):
 
-        statement = select(Usuario)
+        base = select(Usuario)
+        count_base = select(func.count()).select_from(Usuario)
 
         if rol_codigo:
-
-            statement = statement.join(
+            base = base.join(
+                UsuarioRol
+            ).where(
+                UsuarioRol.rol_codigo == rol_codigo
+            )
+            count_base = count_base.join(
                 UsuarioRol
             ).where(
                 UsuarioRol.rol_codigo == rol_codigo
             )
 
         usuarios = self.db.exec(
-            statement
+            base.offset(offset).limit(limit)
         ).all()
 
+        total = self.db.exec(count_base).one()
+
         return {
-            "data": usuarios[offset: offset + limit],
-            "total": len(usuarios)
+            "data": usuarios,
+            "total": total
         }
 
     # Actualizar datos y roles de un usuario

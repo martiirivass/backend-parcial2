@@ -43,7 +43,7 @@ def get_current_user(
 
         user_id = payload.get("sub")
 
-    except:
+    except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=401,
             detail="Token inválido"
