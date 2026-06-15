@@ -355,24 +355,31 @@ class PedidoService:
 
         if es_cliente:
 
-            pedidos = self.repo.get_by_usuario(
-                usuario_id
+            pedidos = self.repo.get_paginated(
+                limit, offset,
+                usuario_id=usuario_id,
+                estado_codigo=estado_codigo
+            )
+
+            total = self.repo.count(
+                usuario_id=usuario_id,
+                estado_codigo=estado_codigo
             )
 
         else:
 
-            pedidos = self.repo.get_all()
+            pedidos = self.repo.get_paginated(
+                limit, offset,
+                estado_codigo=estado_codigo
+            )
 
-        if estado_codigo is not None:
-
-            pedidos = [
-                p for p in pedidos
-                if p.estado_codigo == estado_codigo
-            ]
+            total = self.repo.count(
+                estado_codigo=estado_codigo
+            )
 
         return {
-            "data": pedidos[offset: offset + limit],
-            "total": len(pedidos)
+            "data": pedidos,
+            "total": total
         }
 
     def obtener_pedido(self, pedido_id, usuario_id=None, es_cliente=False):
