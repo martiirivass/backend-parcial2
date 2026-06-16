@@ -5,7 +5,7 @@ from app.repositories.producto_repository import ProductoRepository
 from app.repositories.categoria_repository import CategoriaRepository
 from app.repositories.ingrediente_repository import IngredienteRepository
 from app.schemas.producto_schema import ProductoCreate
-from app.unit_of_work import UnitOfWork
+from app.core.unit_of_work import UnitOfWork
 
 print("TEST: Productos (GET, POST)\n")
 

@@ -24,7 +24,7 @@ from app.repositories.ingrediente_repository import IngredienteRepository
 from app.repositories.pedido_repository import PedidoRepository
 from app.repositories.pago_repository import PagoRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
-from app.unit_of_work import UnitOfWork
+from app.core.unit_of_work import UnitOfWork
 from app.auth.security import hash_password, hash_token, verify_password, create_access_token
 from app.auth.services import register_user
 from datetime import datetime, timezone
@@ -68,7 +68,7 @@ try:
     # ============================================================
     print("\n📦 2. SEED DATA — Admin y demo")
     # ============================================================
-    admin = db.exec(select(Usuario).where(Usuario.email == "admin@admin.com")).first()
+    admin = db.exec(select(Usuario).where(Usuario.email == "admin@foodstore.com")).first()
     check("Admin creado", admin is not None)
     if admin:
         check("Admin tiene roles", len(admin.roles) > 0, f"Roles: {[r.codigo for r in admin.roles]}")
@@ -212,7 +212,7 @@ try:
             check("Historial: 4 entradas (PEND+CONF+EN_PREP+ENTREGADO)", len(historial2) == 4)
 
             # Transicion invalida (ENTREGADO -> CANCELADO no es valida)
-            check("Estado avanzado a ENTREGADO", pedido_entregado.estado_codigo == "ENTREGADO")
+            check("Estado avanzado a ENTREGADO", pedido_avanzado3.estado_codigo == "ENTREGADO")
 
             # Intento transicion invalida
             try:
