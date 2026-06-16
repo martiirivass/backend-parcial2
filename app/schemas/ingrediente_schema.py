@@ -10,7 +10,7 @@ class IngredienteBase(SQLModel):
     nombre: str
     descripcion: Optional[str] = None
     es_alergeno: bool = False
-    stock_cantidad: float = 0
+    stock_cantidad: int = 0
 
     @field_validator("nombre")
     def validar_nombre(cls, v):
@@ -27,7 +27,7 @@ class IngredienteUpdate(SQLModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     es_alergeno: Optional[bool] = None
-    stock_cantidad: Optional[float] = None
+    stock_cantidad: Optional[int] = None
 
 
 class IngredienteRead(IngredienteBase):

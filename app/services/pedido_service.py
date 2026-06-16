@@ -1,20 +1,20 @@
 import asyncio
 import logging
+from decimal import Decimal
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from fastapi import HTTPException
 
+from app.core.config import COSTO_ENVIO_DEFAULT
+from app.schemas.common import paginated_response
 from app.models.pedido_model import Pedido
 from app.models.detalle_pedido_model import DetallePedido
 from app.models.historial_estado_model import HistorialEstadoPedido
-from app.models.pago_model import Pago
-
 from app.repositories.pedido_repository import PedidoRepository
 from app.repositories.producto_repository import ProductoRepository
 from app.repositories.estado_pedido_repository import EstadoPedidoRepository
 from app.repositories.historial_repository import HistorialRepository
-from app.repositories.pago_repository import PagoRepository
 from app.repositories.direccion_repository import DireccionEntregaRepository
 
 if TYPE_CHECKING:
@@ -26,7 +26,6 @@ TRANSICIONES = {
     "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
     "CONFIRMADO": ["EN_PREP", "CANCELADO"],
     "EN_PREP": ["ENTREGADO", "CANCELADO"],
-    "EN_CAMINO": ["ENTREGADO", "CANCELADO"],
     "ENTREGADO": [],
     "CANCELADO": [],
 }
@@ -48,7 +47,6 @@ class PedidoService:
 
         self.historial_repo = HistorialRepository(db)
 
-        self.pago_repo = PagoRepository(db)
         self.direccion_repo = DireccionEntregaRepository(db)
 
     # ── WebSocket event helpers ────────────────────────────────────────
@@ -59,12 +57,14 @@ class PedidoService:
         estado_anterior: str | None,
         estado_nuevo: str | None,
         usuario_id: int,
+        motivo: str | None = None,
     ) -> None:
         self._pending_events.append({
             "pedido_id": pedido_id,
             "estado_anterior": estado_anterior,
             "estado_nuevo": estado_nuevo,
             "usuario_id": usuario_id,
+            "motivo": motivo,
         })
 
     def flush_events(self) -> None:
@@ -82,6 +82,7 @@ class PedidoService:
                 "estado_anterior": ev["estado_anterior"],
                 "estado_nuevo": ev["estado_nuevo"],
                 "usuario_id": ev["usuario_id"],
+                "motivo": ev["motivo"],
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             self.ws_manager.broadcast_to_pedido_sync(
@@ -124,7 +125,7 @@ class PedidoService:
 
     def crear_pedido(self, usuario_id, datos):
 
-        subtotal = 0.0
+        subtotal = Decimal('0.00')
 
         detalles = []
 
@@ -173,9 +174,13 @@ class PedidoService:
                     detail="Dirección de entrega no encontrada"
                 )
 
-        costo_envio = 50.0
+        costo_envio = COSTO_ENVIO_DEFAULT
 
-        total = subtotal + costo_envio
+        descuento = Decimal('0.00')
+        if datos.codigo_descuento == "PREMIUN20":
+            descuento = (subtotal * Decimal('20')) / Decimal('100')
+
+        total = subtotal + costo_envio - descuento
 
         # Crear pedido
         pedido = Pedido(
@@ -184,6 +189,7 @@ class PedidoService:
             direccion_id=datos.direccion_id,
             estado_codigo="PENDIENTE",
             subtotal=subtotal,
+            descuento=descuento,
             costo_envio=costo_envio,
             total=total
         )
@@ -205,20 +211,9 @@ class PedidoService:
             pedido.id,
             None,
             "PENDIENTE",
-            usuario_id
+            usuario_id,
+            motivo=None,
         )
-
-        # Crear pago si existe referencia
-        if datos.referencia_pago:
-
-            pago = Pago(
-                pedido_id=pedido.id,
-                monto=total,
-                forma_pago_codigo=datos.forma_pago_codigo,
-                referencia=datos.referencia_pago
-            )
-
-            self.pago_repo.create(pago)
 
         # Acumular evento WebSocket
         self._add_event(
@@ -226,6 +221,7 @@ class PedidoService:
             None,
             "PENDIENTE",
             usuario_id,
+            motivo=None,
         )
 
         return pedido
@@ -234,8 +230,15 @@ class PedidoService:
         self,
         pedido_id,
         nuevo_estado_codigo,
-        usuario_id
+        usuario_id,
+        motivo: str | None = None,
     ):
+
+        if nuevo_estado_codigo == "CANCELADO" and not motivo:
+            raise HTTPException(
+                status_code=400,
+                detail="El motivo es obligatorio para cancelar un pedido"
+            )
 
         pedido = self.repo.get_by_id(pedido_id)
 
@@ -269,12 +272,12 @@ class PedidoService:
         pedido.estado_codigo = nuevo_estado.codigo
 
         self.repo.update(pedido)
-
         self._crear_historial(
             pedido.id,
             estado_actual.codigo,
             nuevo_estado.codigo,
-            usuario_id
+            usuario_id,
+            motivo=motivo,
         )
 
         # Acumular evento WebSocket (broadcast post-UoW en el router)
@@ -283,6 +286,7 @@ class PedidoService:
             estado_actual.codigo,
             nuevo_estado.codigo,
             usuario_id,
+            motivo=motivo,
         )
 
         return pedido
@@ -290,7 +294,8 @@ class PedidoService:
     def cancelar_pedido(
         self,
         pedido_id,
-        usuario_id
+        usuario_id,
+        motivo: str | None = None,
     ):
 
         pedido = self.repo.get_by_id(pedido_id)
@@ -331,7 +336,8 @@ class PedidoService:
             pedido.id,
             estado_actual.codigo,
             "CANCELADO",
-            usuario_id
+            usuario_id,
+            motivo=motivo,
         )
 
         # Acumular evento WebSocket (broadcast post-UoW en el router)
@@ -340,6 +346,7 @@ class PedidoService:
             estado_actual.codigo,
             "CANCELADO",
             usuario_id,
+            motivo=motivo,
         )
 
         return pedido
@@ -377,10 +384,7 @@ class PedidoService:
                 estado_codigo=estado_codigo
             )
 
-        return {
-            "data": pedidos,
-            "total": total
-        }
+        return paginated_response(pedidos, total, page=(offset // limit) + 1, size=limit)
 
     def obtener_pedido(self, pedido_id, usuario_id=None, es_cliente=False):
 

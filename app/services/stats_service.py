@@ -1,4 +1,5 @@
 import logging
+from datetime import date
 
 from app.repositories.stats_repository import (
     StatsRepository
@@ -22,74 +23,72 @@ logger = logging.getLogger(__name__)
 class StatsService:
 
     def __init__(self, db):
-
         self.repo = StatsRepository(db)
 
-    def get_resumen(self) -> ResumenStats:
-
-        resumen = self.repo.get_resumen_data()
-
+    def get_resumen(
+        self,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
+    ) -> ResumenStats:
+        resumen = self.repo.get_resumen_data(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+        )
         return ResumenStats(
-            ventas_totales=float(
-                resumen["ventas_totales"]
-            ),
-            pedidos_hoy=int(
-                resumen["pedidos_hoy"]
-            ),
-            clientes_nuevos=int(
-                resumen["clientes_nuevos"]
-            ),
-            pedidos_pendientes=int(
-                resumen["pedidos_pendientes"]
-            ),
+            ventas_totales=resumen["ventas_totales"],
+            pedidos_hoy=int(resumen["pedidos_hoy"]),
+            clientes_nuevos=int(resumen["clientes_nuevos"]),
+            pedidos_pendientes=int(resumen["pedidos_pendientes"]),
         )
 
     def get_ventas_semanales(
-        self
+        self,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
     ) -> VentasSemanalesResponse:
-
         data = [
             VentaDiaria(
                 fecha=row["fecha"],
-                total=float(row["total"]),
+                total=row["total"],
                 cantidad=int(row["cantidad"]),
             )
-            for row in self.repo.get_ventas_semanales()
+            for row in self.repo.get_ventas_semanales(
+                fecha_desde=fecha_desde,
+                fecha_hasta=fecha_hasta,
+            )
         ]
-
-        return VentasSemanalesResponse(
-            data=data
-        )
+        return VentasSemanalesResponse(data=data)
 
     def get_productos_mas_vendidos(
         self,
-        limit: int = 10
+        limit: int = 10,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
     ) -> ProductosMasVendidosResponse:
-
         data = [
             ProductoMasVendido(
                 producto_id=row.producto_id,
                 nombre=row.nombre_snapshot,
-                total_vendido=int(
-                    row.total_vendido
-                ),
-                ingreso_total=float(
-                    row.ingreso_total
-                ),
+                total_vendido=int(row.total_vendido),
+                ingreso_total=row.ingreso_total,
             )
             for row in self.repo.get_productos_mas_vendidos(
-                limit
+                limit=limit,
+                fecha_desde=fecha_desde,
+                fecha_hasta=fecha_hasta,
             )
         ]
+        return ProductosMasVendidosResponse(data=data)
 
-        return ProductosMasVendidosResponse(
-            data=data
+    def get_pedidos_por_estado(
+        self,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
+    ) -> PedidosPorEstadoResponse:
+        rows = self.repo.get_pedidos_por_estado(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
         )
-
-    def get_pedidos_por_estado(self) -> PedidosPorEstadoResponse:
-
-        rows = self.repo.get_pedidos_por_estado()
-
         data = [
             PedidosPorEstadoItem(
                 estado_codigo=row.estado_codigo,
@@ -97,20 +96,23 @@ class StatsService:
             )
             for row in rows
         ]
-
         return PedidosPorEstadoResponse(data=data)
 
-    def get_ingresos_por_forma_pago(self) -> IngresosPorFormaPagoResponse:
-
-        rows = self.repo.get_ingresos_por_forma_pago()
-
+    def get_ingresos_por_forma_pago(
+        self,
+        fecha_desde: date | None = None,
+        fecha_hasta: date | None = None,
+    ) -> IngresosPorFormaPagoResponse:
+        rows = self.repo.get_ingresos_por_forma_pago(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+        )
         data = [
             IngresoPorFormaPagoItem(
                 forma_pago_codigo=row.forma_pago_codigo,
-                total=float(row.total),
+                total=row.total,
                 cantidad=int(row.cantidad),
             )
             for row in rows
         ]
-
         return IngresosPorFormaPagoResponse(data=data)

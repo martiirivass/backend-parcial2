@@ -17,7 +17,6 @@ from app.repositories.categoria_repository import CategoriaRepository
 from app.repositories.producto_repository import ProductoRepository
 from app.repositories.ingrediente_repository import IngredienteRepository
 from app.repositories.pedido_repository import PedidoRepository
-from app.repositories.pago_repository import PagoRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 
 
@@ -38,7 +37,6 @@ def make_repos(db: Session) -> dict:
         "producto": ProductoRepository(db),
         "ingrediente": IngredienteRepository(db),
         "pedido": PedidoRepository(db),
-        "pago": PagoRepository(db),
         "refresh_token": RefreshTokenRepository(db),
     }
 
@@ -60,21 +58,17 @@ def create_test_user(db: Session, email: str = "test@test.com") -> object:
         return exists
 
     # Crear nuevo
-    uow = make_uow(db)
     try:
         cliente = register_user(
             nombre="Test",
+            apellido="Test",
             email=email,
             password="test123",
             session=db
         )
-        rol_cliente = db.exec(select(Rol).where(Rol.codigo == "CLIENT")).first()
-        if rol_cliente:
-            ur = UsuarioRol(usuario_id=cliente.id, rol_codigo=rol_cliente.codigo)
-            db.add(ur)
-        uow.commit()
+        db.commit()
         db.refresh(cliente)
         return cliente
     except Exception:
-        uow.rollback()
+        db.rollback()
         return None

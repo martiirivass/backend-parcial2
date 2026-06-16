@@ -1,6 +1,7 @@
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 import mercadopago
 import requests
@@ -15,6 +16,9 @@ from app.pagos.schemas import (
     PagoStatusResponse,
 )
 
+if TYPE_CHECKING:
+    from app.core.ws_manager import WSManager
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,8 +27,10 @@ MP_API_BASE = "https://api.mercadopago.com"
 
 class PagoService:
 
-    def __init__(self, db):
+    def __init__(self, db, ws_manager: "WSManager | None" = None):
         self.db = db
+        self.ws_manager = ws_manager
+        self._pending_events: list[dict] = []
         self.repo = PagoRepository(db)
 
         if not settings.MP_ACCESS_TOKEN:
@@ -34,6 +40,47 @@ class PagoService:
             )
 
         self.sdk = mercadopago.SDK(settings.MP_ACCESS_TOKEN)
+
+    # ── WebSocket event helpers ────────────────────────────────────────
+
+    def _add_event(
+        self,
+        pedido_id: int,
+        estado_anterior: str | None,
+        estado_nuevo: str | None,
+        usuario_id: int,
+        motivo: str | None = None,
+    ) -> None:
+        self._pending_events.append({
+            "pedido_id": pedido_id,
+            "estado_anterior": estado_anterior,
+            "estado_nuevo": estado_nuevo,
+            "usuario_id": usuario_id,
+            "motivo": motivo,
+        })
+
+    def flush_events(self) -> None:
+        if not self.ws_manager:
+            self._pending_events.clear()
+            return
+
+        events = self._pending_events.copy()
+        self._pending_events.clear()
+
+        for ev in events:
+            event_payload = {
+                "event": "pedido_estado_changed",
+                "pedido_id": ev["pedido_id"],
+                "estado_anterior": ev["estado_anterior"],
+                "estado_nuevo": ev["estado_nuevo"],
+                "usuario_id": ev["usuario_id"],
+                "motivo": ev["motivo"],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            self.ws_manager.broadcast_to_pedido_sync(
+                ev["pedido_id"],
+                event_payload,
+            )
 
     def crear_preferencia(
         self,
@@ -126,6 +173,8 @@ class PagoService:
                 external_reference=external_reference,
                 idempotency_key=idempotency_key,
                 mp_status="pending",
+                monto=pedido.total,
+                forma_pago_codigo=pedido.forma_pago_codigo,
             )
             self.repo.create(pago)
             logger.info(f"Pago creado: {pago.id}")
@@ -133,9 +182,6 @@ class PagoService:
             pago.idempotency_key = idempotency_key
             self.repo.update(pago)
             logger.info(f"Pago actualizado: {pago.id}")
-
-        self.db.commit()
-        self.db.refresh(pago)
 
         return CrearPreferenciaResponse(
             preference_id=preference_id,
@@ -214,8 +260,6 @@ class PagoService:
         if mp_status == "approved":
             self._marcar_pedido_pagado(pago.pedido_id)
 
-        self.db.commit()
-
     def _marcar_pedido_pagado(self, pedido_id: int) -> None:
         from app.models.pedido_model import Pedido
 
@@ -225,7 +269,8 @@ class PagoService:
             logger.warning(f"Pedido {pedido_id} no encontrado al marcar pagado")
             return
 
-        if pedido.estado_codigo in ("CONFIRMADO", "EN_PREP", "ENTREGADO"):
+        estado_anterior = pedido.estado_codigo
+        if estado_anterior in ("CONFIRMADO", "EN_PREP", "ENTREGADO"):
             logger.info(
                 f"Pedido {pedido_id} ya estaba en estado "
                 f"'{pedido.estado_codigo}' — no se modifica"
@@ -235,6 +280,14 @@ class PagoService:
         pedido.estado_codigo = "CONFIRMADO"
         pedido.updated_at = datetime.now(timezone.utc)
         self.db.add(pedido)
+
+        self._add_event(
+            pedido_id=pedido.id,
+            estado_anterior=estado_anterior,
+            estado_nuevo="CONFIRMADO",
+            usuario_id=pedido.usuario_id,
+            motivo="Pagado vía MercadoPago",
+        )
 
         logger.info(f"Pedido {pedido_id} marcado como CONFIRMADO (pagado vía MP)")
 
@@ -320,7 +373,6 @@ class PagoService:
                     pass
             pago.actualizado_en = datetime.now(timezone.utc)
             self.repo.update(pago)
-            self.db.commit()
 
             if mp_status == "approved":
                 self._marcar_pedido_pagado(pago.pedido_id)

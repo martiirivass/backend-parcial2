@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, List
 
 from sqlmodel import SQLModel
@@ -19,9 +20,12 @@ class AdminUserRead(SQLModel):
     email: str
     tipo_documento_id: Optional[int] = None
     numero_documento: Optional[str] = None
-    deleted_at: Optional[str] = None
+    deleted_at: Optional[datetime] = None
 
 
 class AdminUsersListResponse(SQLModel):
     data: List[AdminUserRead]
     total: int
+    page: int
+    size: int
+    pages: int

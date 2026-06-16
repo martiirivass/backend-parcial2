@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Session, select
@@ -67,7 +67,7 @@ class CategoriaRepository(
         categoria: Categoria
     ):
 
-        categoria.deleted_at = datetime.now()
+        categoria.deleted_at = datetime.now(timezone.utc)
 
         self.db.add(
             categoria

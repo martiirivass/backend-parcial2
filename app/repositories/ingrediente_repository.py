@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlmodel import Session, select, func
 
@@ -62,6 +62,6 @@ class IngredienteRepository(
         ingrediente: Ingrediente
     ):
 
-        ingrediente.deleted_at = datetime.now()
+        ingrediente.deleted_at = datetime.now(timezone.utc)
 
         self.db.add(ingrediente)

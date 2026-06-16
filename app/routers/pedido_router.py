@@ -8,7 +8,8 @@ from app.schemas.pedido_schema import (
     PedidoCreate,
     PedidoReadWithDetails,
     PedidoListResponse,
-    AvanceEstadoRequest
+    AvanceEstadoRequest,
+    CancelarPedidoRequest,
 )
 
 from app.services.pedido_service import PedidoService
@@ -132,7 +133,8 @@ def avanzar_estado(
         pedido = service.avanzar_estado(
             pedido_id,
             datos.estado_codigo,
-            current_user.id
+            current_user.id,
+            motivo=datos.motivo,
         )
 
     # Broadcast WebSocket DESPUÉS del commit del UoW
@@ -143,13 +145,44 @@ def avanzar_estado(
     return pedido
 
 
-# Cancelar pedido
+# Cancelar pedido (DELETE — spec v6.0)
+@router.delete(
+    "/{pedido_id}",
+    status_code=200,
+    summary="Cancelar propio pedido (CLIENT)"
+)
+def cancelar_pedido_delete(
+    pedido_id: int,
+    db: Session = Depends(get_session),
+    current_user: Usuario = Depends(
+        require_roles("CLIENT", "ADMIN")
+    ),
+):
+
+    service = PedidoService(db, ws_manager)
+
+    with UnitOfWork(db):
+
+        pedido = service.cancelar_pedido(
+            pedido_id,
+            current_user.id,
+        )
+
+    service.flush_events()
+
+    db.refresh(pedido)
+
+    return pedido
+
+
+# Cancelar pedido (PATCH — compatibilidad)
 @router.patch(
     "/{pedido_id}/cancelar",
     summary="Cancelar un pedido"
 )
 def cancelar_pedido(
     pedido_id: int,
+    datos: CancelarPedidoRequest,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(
         require_roles("CLIENT", "ADMIN")
@@ -162,7 +195,8 @@ def cancelar_pedido(
 
         pedido = service.cancelar_pedido(
             pedido_id,
-            current_user.id
+            current_user.id,
+            motivo=datos.motivo,
         )
 
     # Broadcast WebSocket DESPUÉS del commit del UoW

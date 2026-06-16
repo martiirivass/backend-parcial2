@@ -1,8 +1,9 @@
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from sqlmodel import Field, Relationship, SQLModel, Column
-from sqlalchemy import ARRAY, Integer
+from sqlalchemy import ARRAY, CheckConstraint, Integer, Numeric
 
 if TYPE_CHECKING:
     from app.models.pedido_model import Pedido
@@ -10,6 +11,11 @@ if TYPE_CHECKING:
 
 class DetallePedido(SQLModel, table=True):
     __tablename__ = "detalles_pedido"
+
+    __table_args__ = (
+        CheckConstraint("precio_snapshot >= 0", name="ck_detalle_precio"),
+        CheckConstraint("subtotal_snap >= 0", name="ck_detalle_subtotal"),
+    )
 
     pedido_id: Optional[int] = Field(
         default=None, primary_key=True, foreign_key="pedidos.id"
@@ -21,8 +27,8 @@ class DetallePedido(SQLModel, table=True):
 
     # Snapshot (inmutable desde creación)
     nombre_snapshot: str = Field(max_length=200)
-    precio_snapshot: float = Field(default=0.0)
-    subtotal_snap: float = Field(default=0.0)
+    precio_snapshot: Decimal = Field(default=Decimal('0.00'), sa_column=Column(Numeric(10, 2)))
+    subtotal_snap: Decimal = Field(default=Decimal('0.00'), sa_column=Column(Numeric(10, 2)))
 
     # IDs de ingredientes removidos (ej: [3, 7])
     personalizacion: Optional[str] = Field(

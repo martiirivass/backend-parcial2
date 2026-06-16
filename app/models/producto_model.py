@@ -1,7 +1,8 @@
 from typing import List, Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timezone
+from decimal import Decimal
 from sqlmodel import Field, Relationship, SQLModel, Column
-from sqlalchemy import ARRAY, Text
+from sqlalchemy import ARRAY, CheckConstraint, Numeric, Text
 from app.models.producto_categoria_model import ProductoCategoria
 from app.models.producto_ingrediente_model import ProductoIngrediente
 
@@ -13,18 +14,23 @@ if TYPE_CHECKING:
 class Producto(SQLModel, table=True):
     __tablename__ = "productos"
 
+    __table_args__ = (
+        CheckConstraint("precio_base >= 0", name="ck_producto_precio"),
+        CheckConstraint("stock_cantidad >= 0", name="ck_producto_stock"),
+    )
+
     id: Optional[int] = Field(default=None, primary_key=True)
     nombre: str
     descripcion: Optional[str] = None
-    precio_base: float
+    precio_base: Decimal = Field(sa_column=Column(Numeric(10, 2)))
     unidad_venta_id: Optional[int] = Field(default=None, foreign_key="unidades_medida.id")
     imagenes_url: Optional[List[str]] = Field(default=None, sa_column=Column(ARRAY(Text)))
     stock_cantidad: int = Field(default=0)
     disponible: bool = Field(default=True)
 
     # Timestamps y soft delete
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     deleted_at: Optional[datetime] = Field(default=None)
 
     # Aliases para compatibilidad con frontend

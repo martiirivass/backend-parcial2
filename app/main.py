@@ -1,5 +1,5 @@
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from app.db.init_db import init_db
 from app.auth.router import router as auth
@@ -23,6 +23,9 @@ from app.routers.uploads_router import router as uploads_router
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
 from app.core.limiter import limiter
+from app.core.exceptions import rfc7807_handler
+from app.core.config import settings
+import json
 
 from sqlmodel import Session
 from app.db.database import engine
@@ -30,20 +33,22 @@ from sqlalchemy import text
 
 print("[OK] Imports completados")
 
-app = FastAPI()
+app = FastAPI(
+    title="TPI Food Store API",
+    description="API REST para el sistema de gestión de pedidos de Food Store. ",
+    version="1.0.0",
+)
 print("[OK] FastAPI app creada")
 
 app.state.limiter = limiter
 app.add_exception_handler(429, _rate_limit_exceeded_handler)
+app.add_exception_handler(HTTPException, rfc7807_handler)
+
+cors_origins = json.loads(settings.CORS_ORIGINS)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

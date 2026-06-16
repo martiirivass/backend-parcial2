@@ -83,3 +83,20 @@ class ProductoImagenesUpdate(SQLModel):
 class ProductoDisponibilidadUpdate(SQLModel):
     disponible: bool
     stock_cantidad: Optional[int] = None
+
+
+class ProductoIngredienteCreate(SQLModel):
+    ingrediente_id: int
+    cantidad: float = 1.0
+    unidad_medida_id: Optional[int] = None
+    es_removible: bool = False
+
+
+class ProductoIngredienteRead(SQLModel):
+    producto_id: int
+    ingrediente_id: int
+    nombre_ingrediente: str
+    es_alergeno: bool
+    cantidad: float
+    unidad_medida_id: Optional[int] = None
+    es_removible: bool

@@ -8,6 +8,8 @@ from app.repositories.ingrediente_repository import (
     IngredienteRepository
 )
 
+from app.schemas.common import paginated_response
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,10 +56,12 @@ class IngredienteService:
                 if q.lower() in ingrediente.nombre.lower()
             ]
 
-        return {
-            "data": ingredientes,
-            "total": len(ingredientes)
-        }
+        return paginated_response(
+            ingredientes,
+            len(ingredientes),
+            page=(offset // limit) + 1,
+            size=limit,
+        )
 
     # Obtener ingrediente
     def obtener_ingrediente(

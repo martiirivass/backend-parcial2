@@ -15,12 +15,18 @@ from app.repositories.categoria_repository import (
     CategoriaRepository
 )
 
+from app.schemas.common import paginated_response
+
 from app.repositories.ingrediente_repository import (
     IngredienteRepository
 )
 
+from app.models.producto_ingrediente_model import ProductoIngrediente
+
 from app.schemas.producto_schema import (
-    ProductoReadWithRelations
+    ProductoReadWithRelations,
+    ProductoIngredienteRead,
+    ProductoIngredienteCreate
 )
 
 from app.services.imagen_service import (
@@ -134,10 +140,7 @@ class ProductoService:
             for producto in productos
         ]
 
-        return {
-            "data": data,
-            "total": total
-        }
+        return paginated_response(data, total, page=(offset // limit) + 1, size=limit)
 
     # Actualizar disponibilidad
     def actualizar_disponibilidad(
@@ -268,8 +271,66 @@ class ProductoService:
 
         producto.imagenes_url = imagenes_url
         self.repo.update(producto)
+
         return producto
 
+    # Obtener ingredientes
+    def obtener_ingredientes(
+        self,
+        producto_id: int
+    ):
+        producto = self.repo.get_by_id(producto_id)
+
+        if not producto:
+            raise HTTPException(
+                status_code=404,
+                detail="Producto no encontrado"
+            )
+
+        return producto.ingredientes
+
+    # Agregar ingrediente a producto
+    def agregar_ingrediente(
+        self,
+        producto_id: int,
+        data
+    ):
+        producto = self.repo.get_by_id(producto_id)
+
+        if not producto:
+            raise HTTPException(
+                status_code=404,
+                detail="Producto no encontrado"
+            )
+
+        ingrediente = self.ing_repo.get_by_id(data.ingrediente_id)
+
+        if not ingrediente:
+            raise HTTPException(
+                status_code=404,
+                detail="Ingrediente no encontrado"
+            )
+
+        pi = ProductoIngrediente(
+            producto_id=producto_id,
+            ingrediente_id=data.ingrediente_id,
+            cantidad=data.cantidad,
+            unidad_medida_id=data.unidad_medida_id,
+            es_removible=data.es_removible
+        )
+
+        self.repo.db.add(pi)
+        self.repo.db.flush()
+
+        return ProductoIngredienteRead(
+            producto_id=producto_id,
+            ingrediente_id=data.ingrediente_id,
+            nombre_ingrediente=ingrediente.nombre,
+            es_alergeno=ingrediente.es_alergeno,
+            cantidad=data.cantidad,
+            unidad_medida_id=data.unidad_medida_id,
+            es_removible=data.es_removible
+        )
     # Subir imagen
     def subir_imagen(
         self,
@@ -292,7 +353,10 @@ class ProductoService:
             archivo
         )
 
-        producto.imagenes_url = imagen_url
+        if producto.imagenes_url:
+            producto.imagenes_url.append(imagen_url)
+        else:
+            producto.imagenes_url = [imagen_url]
 
         self.repo.update(producto)
 

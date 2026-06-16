@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlmodel import Session, func, select
+from sqlmodel import Session
 
 from app.models.usuario import Usuario
 from app.models.usuario_rol_model import UsuarioRol
-from app.models.rol import Rol
-from app.models.tipo_documento_model import TipoDocumento
+from app.schemas.common import paginated_response
+from app.repositories.admin_repository import AdminRepository
 
 logger = logging.getLogger(__name__)
 
@@ -16,166 +16,61 @@ logger = logging.getLogger(__name__)
 class AdminService:
 
     def __init__(self, db: Session):
-        self.db = db
+        self.repo = AdminRepository(db)
 
-    # Obtener usuario por ID
-    def obtener_usuario(
-        self,
-        usuario_id: int
-    ):
-
-        usuario = self.db.get(
-            Usuario,
-            usuario_id
-        )
-
+    def obtener_usuario(self, usuario_id: int) -> Usuario:
+        usuario = self.repo.get_usuario(usuario_id)
         if not usuario:
-
-            raise HTTPException(
-                status_code=404,
-                detail="Usuario no encontrado"
-            )
-
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
         return usuario
 
-    # Listar usuarios con paginacion y filtro opcional por rol
     def listar_usuarios(
         self,
         limit: int,
         offset: int,
-        rol_codigo: Optional[str] = None
+        rol_codigo: Optional[str] = None,
     ):
+        usuarios, total = self.repo.list_usuarios(limit, offset, rol_codigo)
+        return paginated_response(usuarios, total, page=(offset // limit) + 1, size=limit)
 
-        base = select(Usuario)
-        count_base = select(func.count()).select_from(Usuario)
+    def actualizar_usuario(self, usuario_id: int, datos):
+        usuario = self.obtener_usuario(usuario_id)
 
-        if rol_codigo:
-            base = base.join(
-                UsuarioRol
-            ).where(
-                UsuarioRol.rol_codigo == rol_codigo
-            )
-            count_base = count_base.join(
-                UsuarioRol
-            ).where(
-                UsuarioRol.rol_codigo == rol_codigo
-            )
-
-        usuarios = self.db.exec(
-            base.offset(offset).limit(limit)
-        ).all()
-
-        total = self.db.exec(count_base).one()
-
-        return {
-            "data": usuarios,
-            "total": total
-        }
-
-    # Actualizar datos y roles de un usuario
-    def actualizar_usuario(
-        self,
-        usuario_id: int,
-        datos
-    ):
-
-        usuario = self.obtener_usuario(
-            usuario_id
-        )
-
-        update_data = datos.model_dump(
-            exclude_unset=True
-        )
+        update_data = datos.model_dump(exclude_unset=True)
 
         if "rol_ids" in update_data:
+            new_codigos = set(update_data["rol_ids"])
+            current_roles = self.repo.get_usuario_roles(usuario_id)
+            current_codigos = {ur.rol_codigo for ur in current_roles}
 
-            new_codigos = set(
-                update_data["rol_ids"]
-            )
+            for ur in current_roles:
+                if ur.rol_codigo not in new_codigos:
+                    self.repo.delete_usuario_role(ur)
 
-            current_codigos = {
-                ur.rol_codigo
-                for ur in (
-                    usuario.usuario_roles or []
-                )
-            }
-
-            # Quitar roles que ya no estan
-            for ur in list(
-                usuario.usuario_roles or []
-            ):
-
-                if (
-                    ur.rol_codigo
-                    not in new_codigos
-                ):
-
-                    self.db.delete(ur)
-
-            # Agregar roles nuevos
             for codigo in new_codigos:
-
                 if codigo not in current_codigos:
-
-                    # Validar que el rol existe
-                    rol = self.db.exec(
-                        select(Rol).where(
-                            Rol.codigo == codigo
-                        )
-                    ).first()
-
+                    rol = self.repo.get_rol(codigo)
                     if rol:
-
                         nuevo_ur = UsuarioRol(
-                            usuario_id=usuario.id,
-                            rol_codigo=codigo
+                            usuario_id=usuario.id, rol_codigo=codigo
                         )
-
-                        self.db.add(nuevo_ur)
+                        self.repo.add_usuario_role(nuevo_ur)
 
             del update_data["rol_ids"]
 
-        # Actualizar campos del usuario
         for key, value in update_data.items():
+            setattr(usuario, key, value)
 
-            setattr(
-                usuario,
-                key,
-                value
-            )
-
-        self.db.add(usuario)
-
+        self.repo.update(usuario)
         return usuario
 
-    # Soft delete — marca deleted_at
-    def eliminar_usuario(
-        self,
-        usuario_id: int
-    ):
+    def eliminar_usuario(self, usuario_id: int) -> None:
+        usuario = self.obtener_usuario(usuario_id)
+        usuario.deleted_at = datetime.now(timezone.utc)
+        self.repo.update(usuario)
 
-        usuario = self.obtener_usuario(
-            usuario_id
-        )
-
-        usuario.deleted_at = datetime.now(
-            timezone.utc
-        )
-
-        self.db.add(usuario)
-
-    # Restaurar usuario soft-deleteado
-    def restaurar_usuario(
-        self,
-        usuario_id: int
-    ):
-
-        usuario = self.obtener_usuario(
-            usuario_id
-        )
-
+    def restaurar_usuario(self, usuario_id: int) -> Usuario:
+        usuario = self.obtener_usuario(usuario_id)
         usuario.deleted_at = None
-
-        self.db.add(usuario)
-
+        self.repo.update(usuario)
         return usuario

@@ -9,6 +9,8 @@ from app.repositories.categoria_repository import (
     CategoriaRepository
 )
 
+from app.schemas.common import paginated_response
+
 from app.services.imagen_service import (
     ImagenService
 )
@@ -52,10 +54,12 @@ class CategoriaService:
             parent_id=parent_id
         )
 
-        return {
-            "data": categorias[offset: offset + limit],
-            "total": len(categorias)
-        }
+        return paginated_response(
+            categorias[offset: offset + limit],
+            len(categorias),
+            page=(offset // limit) + 1,
+            size=limit,
+        )
 
     # Árbol recursivo
     def get_tree(self):
