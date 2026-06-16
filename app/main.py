@@ -1,6 +1,10 @@
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from app.core.limiter import limiter
 from app.db.init_db import init_db
 from app.auth.router import router as auth
 from app.routers.producto_router import router as producto
@@ -17,8 +21,11 @@ from app.routers.pago_router import router as pago
 from app.routers.ws_router import router as ws
 from app.core.ws_manager import ws_manager
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import HTTPException as FastAPIHTTPException
+from app.core.errors import rfc7807_exception_handler
 from app.pagos.router import router as pagos
 from app.services.cloudinary_service import CloudinaryService
+from app.modules.uploads.router import router as uploads
 
 
 from sqlmodel import Session
@@ -28,6 +35,9 @@ from sqlalchemy import text
 print("[OK] Imports completados")
 
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(FastAPIHTTPException, rfc7807_exception_handler)
 print("[OK] FastAPI app creada")
 
 app.add_middleware(
@@ -96,5 +106,7 @@ app.include_router(ws)
 print("[OK] WebSocket router incluido")
 app.include_router(pagos, prefix="/api/v1")
 print("[OK] Pagos router incluido")
+app.include_router(uploads, prefix="/api/v1")
+print("[OK] Uploads router incluido")
 
 print("*** APP LISTA ***")

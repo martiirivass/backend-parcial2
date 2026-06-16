@@ -1,6 +1,7 @@
 from typing import Optional
-
-from sqlmodel import Field, SQLModel
+from decimal import Decimal
+from sqlmodel import Field, SQLModel, Column
+from sqlalchemy import Numeric
 
 
 class ProductoIngrediente(SQLModel, table=True):
@@ -12,7 +13,7 @@ class ProductoIngrediente(SQLModel, table=True):
     ingrediente_id: Optional[int] = Field(
         default=None, primary_key=True, foreign_key="ingredientes.id"
     )
-    cantidad: float = Field(default=1.0)
+    cantidad: Decimal = Field(default=Decimal('1'), sa_column=Column(Numeric(10, 3)))
     unidad_medida_id: Optional[int] = Field(
         default=None, foreign_key="unidades_medida.id"
     )

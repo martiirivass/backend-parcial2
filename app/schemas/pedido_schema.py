@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import SQLModel, Field
@@ -36,6 +37,7 @@ class PedidoCreate(SQLModel):
 
 class AvanceEstadoRequest(SQLModel):
     estado_codigo: str
+    motivo: Optional[str] = None
 
 
 class CancelarPedidoRequest(SQLModel):
@@ -46,9 +48,9 @@ class DetallePedidoRead(SQLModel):
     pedido_id: int
     producto_id: int
     nombre_snapshot: str
-    precio_snapshot: float
+    precio_snapshot: Decimal
     cantidad: int
-    subtotal_snap: float
+    subtotal_snap: Decimal
     personalizacion: Optional[str] = None
     created_at: datetime
 
@@ -59,10 +61,10 @@ class PedidoRead(SQLModel):
     direccion_id: Optional[int] = None
     estado_codigo: str
     forma_pago_codigo: str
-    subtotal: float
-    descuento: float
-    costo_envio: float
-    total: float
+    subtotal: Decimal
+    descuento: Decimal
+    costo_envio: Decimal
+    total: Decimal
     notas: Optional[str] = None
     created_at: datetime
     updated_at: datetime

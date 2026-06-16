@@ -8,7 +8,8 @@ from app.schemas.pedido_schema import (
     PedidoCreate,
     PedidoReadWithDetails,
     PedidoListResponse,
-    AvanceEstadoRequest
+    AvanceEstadoRequest,
+    CancelarPedidoRequest,
 )
 
 from app.services.pedido_service import PedidoService
@@ -132,7 +133,8 @@ def avanzar_estado(
         pedido = service.avanzar_estado(
             pedido_id,
             datos.estado_codigo,
-            current_user.id
+            current_user.id,
+            datos.motivo
         )
 
     # Broadcast WebSocket DESPUÉS del commit del UoW
@@ -150,6 +152,7 @@ def avanzar_estado(
 )
 def cancelar_pedido(
     pedido_id: int,
+    datos: CancelarPedidoRequest,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(
         require_roles("CLIENT", "ADMIN")
@@ -162,7 +165,8 @@ def cancelar_pedido(
 
         pedido = service.cancelar_pedido(
             pedido_id,
-            current_user.id
+            current_user.id,
+            datos.motivo
         )
 
     # Broadcast WebSocket DESPUÉS del commit del UoW

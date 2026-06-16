@@ -1,7 +1,8 @@
 from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
-
-from sqlmodel import Field, Relationship, SQLModel
+from decimal import Decimal
+from sqlmodel import Field, Relationship, SQLModel, Column
+from sqlalchemy import Numeric, CheckConstraint
 
 if TYPE_CHECKING:
     from app.models.detalle_pedido_model import DetallePedido
@@ -25,10 +26,13 @@ class Pedido(SQLModel, table=True):
     )
 
     # Snapshot monetario (inmutable desde creación)
-    subtotal: float = Field(default=0.0)
-    descuento: float = Field(default=0.0)
-    costo_envio: float = Field(default=50.0)
-    total: float = Field(default=0.0)
+    subtotal: Decimal = Field(default=Decimal('0'), sa_column=Column(Numeric(10, 2)))
+    descuento: Decimal = Field(default=Decimal('0'), sa_column=Column(Numeric(10, 2)))
+    costo_envio: Decimal = Field(default=Decimal('50'), sa_column=Column(Numeric(10, 2)))
+    total: Decimal = Field(
+        default=Decimal('0'),
+        sa_column=Column(Numeric(10, 2), CheckConstraint("total >= 0"))
+    )
 
     notas: Optional[str] = None
 

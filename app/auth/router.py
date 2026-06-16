@@ -18,7 +18,6 @@ from app.auth.schemas import (
     RegisterResponse,
     LoginResponse,
     RefreshResponse,
-    LogoutResponse,
     MeResponse
 )
 
@@ -54,6 +53,8 @@ from app.core.unit_of_work import (
     UnitOfWork
 )
 
+from app.core.limiter import limiter
+
 router = APIRouter(
     prefix="/auth",
     tags=["Auth"]
@@ -66,7 +67,9 @@ router = APIRouter(
     status_code=201,
     summary="Registrar usuario cliente"
 )
+@limiter.limit("5/15minutes")
 def register(
+    request: Request,
     data: RegisterRequest,
     session: Session = Depends(get_session)
 ):
@@ -93,7 +96,9 @@ def register(
     status_code=200,
     summary="Iniciar sesión"
 )
+@limiter.limit("5/15minutes")
 def login(
+    request: Request,
     data: LoginRequest,
     response: Response,
     session: Session = Depends(get_session)
@@ -251,17 +256,11 @@ def me(
 
 @router.post(
     "/logout",
-    response_model=LogoutResponse,
-    status_code=200,
+    status_code=204,
     summary="Cerrar sesión"
 )
 def logout(
     response: Response
 ):
-
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
-
-    return {
-        "message": "Sesión cerrada"
-    }

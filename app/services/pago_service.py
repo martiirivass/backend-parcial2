@@ -31,7 +31,8 @@ class PagoService:
 
         pago = Pago(
             pedido_id=datos.pedido_id,
-            external_reference=str(datos.pedido_id),
+            transaction_amount=datos.monto,
+            external_reference=datos.referencia or str(datos.pedido_id),
         )
 
         self.repo.create(pago)

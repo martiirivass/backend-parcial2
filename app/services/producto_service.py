@@ -1,9 +1,10 @@
 import logging
 
-from fastapi import (
-    HTTPException,
-    UploadFile
-)
+import math
+
+from fastapi import UploadFile
+
+from app.core.errors import http_error as http_error
 
 from app.models.producto_model import Producto
 
@@ -96,9 +97,8 @@ class ProductoService:
         )
 
         if not producto:
-            raise HTTPException(
-                status_code=404,
-                detail="Producto no encontrado"
+            raise http_error(
+                404, "Producto no encontrado", "PRODUCT_NOT_FOUND"
             )
 
         return producto
@@ -106,16 +106,18 @@ class ProductoService:
     # Listar productos
     def listar_productos(
         self,
-        limit: int,
-        offset: int,
+        page: int = 1,
+        size: int = 20,
         categoria_id=None,
         disponible=None,
         q=None
     ):
 
+        skip = (page - 1) * size
+
         productos = self.repo.get_all_filtered(
-            limit=limit,
-            offset=offset,
+            limit=size,
+            offset=skip,
             categoria_id=categoria_id,
             disponible=disponible,
             q=q
@@ -134,9 +136,14 @@ class ProductoService:
             for producto in productos
         ]
 
+        pages = math.ceil(total / size) if size > 0 else 0
+
         return {
-            "data": data,
-            "total": total
+            "items": data,
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": pages,
         }
 
     # Actualizar disponibilidad
@@ -151,9 +158,8 @@ class ProductoService:
         )
 
         if not producto:
-            raise HTTPException(
-                status_code=404,
-                detail="Producto no encontrado"
+            raise http_error(
+                404, "Producto no encontrado", "PRODUCT_NOT_FOUND"
             )
 
         producto.disponible = datos.disponible
@@ -179,9 +185,8 @@ class ProductoService:
         )
 
         if not producto:
-            raise HTTPException(
-                status_code=404,
-                detail="Producto no encontrado"
+            raise http_error(
+                404, "Producto no encontrado", "PRODUCT_NOT_FOUND"
             )
 
         update_data = datos.model_dump(
@@ -245,9 +250,8 @@ class ProductoService:
         )
 
         if not producto:
-            raise HTTPException(
-                status_code=404,
-                detail="Producto no encontrado"
+            raise http_error(
+                404, "Producto no encontrado", "PRODUCT_NOT_FOUND"
             )
 
         self.repo.delete(producto)
@@ -264,9 +268,8 @@ class ProductoService:
         )
 
         if not producto:
-            raise HTTPException(
-                status_code=404,
-                detail="Producto no encontrado"
+            raise http_error(
+                404, "Producto no encontrado", "PRODUCT_NOT_FOUND"
             )
 
         imagen_url = ImagenService.guardar(
@@ -274,7 +277,7 @@ class ProductoService:
             archivo
         )
 
-        producto.imagenes_url = imagen_url
+        producto.imagenes_url = [imagen_url]
 
         self.repo.update(producto)
 

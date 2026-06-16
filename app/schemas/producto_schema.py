@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel
 from pydantic import field_validator
@@ -11,9 +12,9 @@ if TYPE_CHECKING:
 class ProductoBase(SQLModel):
     nombre: str
     descripcion: Optional[str] = None
-    precio_base: float
+    precio_base: Decimal
     unidad_venta_id: Optional[int] = None
-    imagenes_url: Optional[str] = None
+    imagenes_url: Optional[List[str]] = None
     stock_cantidad: int = 0
     disponible: bool = True
 
@@ -44,9 +45,9 @@ class ProductoCreate(ProductoBase):
 class ProductoUpdate(SQLModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
-    precio_base: Optional[float] = None
+    precio_base: Optional[Decimal] = None
     unidad_venta_id: Optional[int] = None
-    imagenes_url: Optional[str] = None
+    imagenes_url: Optional[List[str]] = None
     stock_cantidad: Optional[int] = None
     disponible: Optional[bool] = None
     categoria_ids: Optional[List[int]] = None
@@ -61,7 +62,7 @@ class ProductoUpdate(SQLModel):
 
 class ProductoRead(ProductoBase):
     id: int
-    precio: float  # alias via @property del modelo
+    precio: Decimal  # alias via @property del modelo
     imagen_url: Optional[str] = None  # alias via @property del modelo
 
 

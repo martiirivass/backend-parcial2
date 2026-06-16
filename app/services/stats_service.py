@@ -26,9 +26,7 @@ class StatsService:
         resumen = self.repo.get_resumen_data()
 
         return ResumenStats(
-            ventas_totales=float(
-                resumen["ventas_totales"]
-            ),
+            ventas_totales=resumen["ventas_totales"],
             pedidos_hoy=int(
                 resumen["pedidos_hoy"]
             ),
@@ -47,7 +45,7 @@ class StatsService:
         data = [
             VentaDiaria(
                 fecha=row["fecha"],
-                total=float(row["total"]),
+                total=row["total"],
                 cantidad=int(row["cantidad"]),
             )
             for row in self.repo.get_ventas_semanales()
@@ -69,9 +67,7 @@ class StatsService:
                 total_vendido=int(
                     row.total_vendido
                 ),
-                ingreso_total=float(
-                    row.ingreso_total
-                ),
+                ingreso_total=row.ingreso_total,
             )
             for row in self.repo.get_productos_mas_vendidos(
                 limit

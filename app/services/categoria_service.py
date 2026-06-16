@@ -1,7 +1,9 @@
 import logging
+import math
 
-from fastapi import HTTPException
 from fastapi import UploadFile
+
+from app.core.errors import http_error
 
 from app.models.categoria_model import Categoria
 
@@ -43,18 +45,26 @@ class CategoriaService:
     # Listar categorías
     def listar_categorias(
         self,
-        limit: int,
-        offset: int,
+        page: int = 1,
+        size: int = 20,
         parent_id=None
     ):
+
+        skip = (page - 1) * size
 
         categorias = self.repo.get_all(
             parent_id=parent_id
         )
 
+        total = len(categorias)
+        pages = math.ceil(total / size) if size > 0 else 0
+
         return {
-            "data": categorias[offset: offset + limit],
-            "total": len(categorias)
+            "items": categorias[skip: skip + size],
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": pages,
         }
 
     # Árbol recursivo

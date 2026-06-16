@@ -1,9 +1,12 @@
 import asyncio
 import logging
+from decimal import Decimal
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from fastapi import HTTPException
+import math
+
+from app.core.errors import http_error
 
 from app.models.pedido_model import Pedido
 from app.models.detalle_pedido_model import DetallePedido
@@ -25,8 +28,7 @@ logger = logging.getLogger(__name__)
 TRANSICIONES = {
     "PENDIENTE": ["CONFIRMADO", "CANCELADO"],
     "CONFIRMADO": ["EN_PREP", "CANCELADO"],
-    "EN_PREP": ["EN_CAMINO", "CANCELADO"],
-    "EN_CAMINO": ["ENTREGADO", "CANCELADO"],
+    "EN_PREP": ["ENTREGADO", "CANCELADO"],
     "ENTREGADO": [],
     "CANCELADO": [],
 }
@@ -59,12 +61,14 @@ class PedidoService:
         estado_anterior: str | None,
         estado_nuevo: str | None,
         usuario_id: int,
+        motivo: str | None = None,
     ) -> None:
         self._pending_events.append({
             "pedido_id": pedido_id,
             "estado_anterior": estado_anterior,
             "estado_nuevo": estado_nuevo,
             "usuario_id": usuario_id,
+            "motivo": motivo,
         })
 
     def flush_events(self) -> None:
@@ -82,6 +86,7 @@ class PedidoService:
                 "estado_anterior": ev["estado_anterior"],
                 "estado_nuevo": ev["estado_nuevo"],
                 "usuario_id": ev["usuario_id"],
+                "motivo": ev.get("motivo"),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
             self.ws_manager.broadcast_to_pedido_sync(
@@ -92,11 +97,10 @@ class PedidoService:
     def _get_estado_by_codigo(self, codigo):
 
         estado = self.estado_repo.get_by_codigo(codigo)
-
         if not estado:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Estado {codigo} no encontrado"
+
+            raise http_error(
+                500, f"Estado {codigo} no encontrado", "STATE_NOT_FOUND"
             )
 
         return estado
@@ -124,7 +128,7 @@ class PedidoService:
 
     def crear_pedido(self, usuario_id, datos):
 
-        subtotal = 0.0
+        subtotal = Decimal('0')
 
         detalles = []
 
@@ -137,15 +141,13 @@ class PedidoService:
 
             if not producto or producto.deleted_at is not None:
 
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Producto ID {item.producto_id} no encontrado"
+                raise http_error(
+                    404, f"Producto ID {item.producto_id} no encontrado", "PRODUCT_NOT_FOUND"
                 )
 
             if producto.stock_cantidad < item.cantidad:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Stock insuficiente para {producto.nombre}"
+                raise http_error(
+                    400, f"Stock insuficiente para {producto.nombre}", "INSUFFICIENT_STOCK"
                 )
 
             item_subtotal = (
@@ -168,12 +170,11 @@ class PedidoService:
         if datos.direccion_id is not None:
             direccion = self.direccion_repo.get_by_id(datos.direccion_id)
             if not direccion:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Dirección de entrega no encontrada"
+                raise http_error(
+                    404, "Dirección de entrega no encontrada", "ADDRESS_NOT_FOUND"
                 )
 
-        costo_envio = 50.0
+        costo_envio = Decimal('50')
 
         total = subtotal + costo_envio
 
@@ -213,9 +214,9 @@ class PedidoService:
 
             pago = Pago(
                 pedido_id=pedido.id,
-                monto=total,
-                forma_pago_codigo=datos.forma_pago_codigo,
-                referencia=datos.referencia_pago
+                transaction_amount=total,
+                external_reference=datos.referencia_pago,
+                idempotency_key=str(pedido.id),
             )
 
             self.pago_repo.create(pago)
@@ -234,16 +235,16 @@ class PedidoService:
         self,
         pedido_id,
         nuevo_estado_codigo,
-        usuario_id
+        usuario_id,
+        motivo=None
     ):
 
         pedido = self.repo.get_by_id(pedido_id)
 
         if not pedido:
 
-            raise HTTPException(
-                status_code=404,
-                detail="Pedido no encontrado"
+            raise http_error(
+                404, "Pedido no encontrado", "ORDER_NOT_FOUND"
             )
 
         estado_actual = self._get_estado_by_codigo(
@@ -261,9 +262,14 @@ class PedidoService:
 
         if nuevo_estado.codigo not in transiciones_validas:
 
-            raise HTTPException(
-                status_code=400,
-                detail=f"No se puede pasar de {estado_actual.codigo} a {nuevo_estado.codigo}"
+            raise http_error(
+                400, f"No se puede pasar de {estado_actual.codigo} a {nuevo_estado.codigo}", "INVALID_STATE_TRANSITION"
+            )
+
+        # Validate motivo for cancellation
+        if nuevo_estado.codigo == "CANCELADO" and (not motivo or not motivo.strip()):
+            raise http_error(
+                422, "El motivo es obligatorio para cancelar un pedido", "MOTIVO_REQUIRED"
             )
 
         pedido.estado_codigo = nuevo_estado.codigo
@@ -274,7 +280,8 @@ class PedidoService:
             pedido.id,
             estado_actual.codigo,
             nuevo_estado.codigo,
-            usuario_id
+            usuario_id,
+            motivo=motivo
         )
 
         # Acumular evento WebSocket (broadcast post-UoW en el router)
@@ -283,6 +290,7 @@ class PedidoService:
             estado_actual.codigo,
             nuevo_estado.codigo,
             usuario_id,
+            motivo=motivo,
         )
 
         return pedido
@@ -290,23 +298,22 @@ class PedidoService:
     def cancelar_pedido(
         self,
         pedido_id,
-        usuario_id
+        usuario_id,
+        motivo=None
     ):
 
         pedido = self.repo.get_by_id(pedido_id)
 
         if not pedido:
 
-            raise HTTPException(
-                status_code=404,
-                detail="Pedido no encontrado"
+            raise http_error(
+                404, "Pedido no encontrado", "ORDER_NOT_FOUND"
             )
 
         if pedido.usuario_id != usuario_id:
 
-            raise HTTPException(
-                status_code=403,
-                detail="No puedes cancelar un pedido que no te pertenece"
+            raise http_error(
+                403, "No puedes cancelar un pedido que no te pertenece", "FORBIDDEN_CANCEL"
             )
 
         estado_actual = self._get_estado_by_codigo(
@@ -318,9 +325,14 @@ class PedidoService:
             "CONFIRMADO"
         ]:
 
-            raise HTTPException(
-                status_code=400,
-                detail=f"No se puede cancelar un pedido en estado {estado_actual.codigo}"
+            raise http_error(
+                400, f"No se puede cancelar un pedido en estado {estado_actual.codigo}", "INVALID_CANCEL_STATE"
+            )
+
+        # Validate motivo for cancellation
+        if not motivo or not motivo.strip():
+            raise http_error(
+                422, "El motivo es obligatorio para cancelar un pedido", "MOTIVO_REQUIRED"
             )
 
         pedido.estado_codigo = "CANCELADO"
@@ -331,7 +343,8 @@ class PedidoService:
             pedido.id,
             estado_actual.codigo,
             "CANCELADO",
-            usuario_id
+            usuario_id,
+            motivo=motivo
         )
 
         # Acumular evento WebSocket (broadcast post-UoW en el router)
@@ -340,6 +353,7 @@ class PedidoService:
             estado_actual.codigo,
             "CANCELADO",
             usuario_id,
+            motivo=motivo,
         )
 
         return pedido
@@ -348,15 +362,17 @@ class PedidoService:
         self,
         usuario_id,
         es_cliente,
-        limit,
-        offset,
+        page: int = 1,
+        size: int = 20,
         estado_codigo=None
     ):
+
+        skip = (page - 1) * size
 
         if es_cliente:
 
             pedidos = self.repo.get_paginated(
-                limit, offset,
+                size, skip,
                 usuario_id=usuario_id,
                 estado_codigo=estado_codigo
             )
@@ -369,7 +385,7 @@ class PedidoService:
         else:
 
             pedidos = self.repo.get_paginated(
-                limit, offset,
+                size, skip,
                 estado_codigo=estado_codigo
             )
 
@@ -377,9 +393,14 @@ class PedidoService:
                 estado_codigo=estado_codigo
             )
 
+        pages = math.ceil(total / size) if size > 0 else 0
+
         return {
-            "data": pedidos,
-            "total": total
+            "items": pedidos,
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": pages,
         }
 
     def obtener_pedido(self, pedido_id, usuario_id=None, es_cliente=False):
@@ -388,16 +409,14 @@ class PedidoService:
 
         if not pedido:
 
-            raise HTTPException(
-                status_code=404,
-                detail="Pedido no encontrado"
+            raise http_error(
+                404, "Pedido no encontrado", "ORDER_NOT_FOUND"
             )
 
         if es_cliente and pedido.usuario_id != usuario_id:
 
-            raise HTTPException(
-                status_code=403,
-                detail="No tienes permiso para ver este pedido"
+            raise http_error(
+                403, "No tienes permiso para ver este pedido", "FORBIDDEN_ACCESS"
             )
 
         return pedido
@@ -408,9 +427,8 @@ class PedidoService:
 
         if not pedido:
 
-            raise HTTPException(
-                status_code=404,
-                detail="Pedido no encontrado"
+            raise http_error(
+                404, "Pedido no encontrado", "ORDER_NOT_FOUND"
             )
 
         historial = self.historial_repo.get_by_pedido_id(

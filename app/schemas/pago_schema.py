@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 from datetime import datetime
 from sqlmodel import SQLModel
@@ -5,7 +6,7 @@ from sqlmodel import SQLModel
 
 class PagoCreate(SQLModel):
     pedido_id: int
-    monto: float
+    monto: Decimal
     forma_pago_codigo: str
     referencia: Optional[str] = None
 
@@ -17,7 +18,7 @@ class PagoRead(SQLModel):
     mp_status: Optional[str] = None
     external_reference: str
     idempotency_key: Optional[str] = None
-    transaction_amount: Optional[float] = None
+    transaction_amount: Optional[Decimal] = None
     date_approved: Optional[datetime] = None
     creado_en: datetime
     actualizado_en: datetime

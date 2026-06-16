@@ -99,21 +99,15 @@ def seed_estados_pedido(session):
         "es_terminal": False
     },
     {
-        "codigo": "EN_CAMINO",
-        "descripcion": "Pedido en camino al cliente",
-        "orden": 4,
-        "es_terminal": False
-    },
-    {
         "codigo": "ENTREGADO",
         "descripcion": "Pedido entregado",
-        "orden": 5,
+        "orden": 4,
         "es_terminal": True
     },
     {
         "codigo": "CANCELADO",
         "descripcion": "Pedido cancelado",
-        "orden": 6,
+        "orden": 5,
         "es_terminal": True
     }
 ]
@@ -384,7 +378,7 @@ def seed_productos_ejemplo(session):
                 )
                 session.add(pi)
 
-        print(f"  Producto creado: {p['nombre']} (${p['precio_base']:,.0f})")
+        print(f"  Producto creado: {p['nombre']} (${float(p['precio_base']):,.0f})")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from datetime import date, datetime
 from typing import Optional
 from sqlmodel import SQLModel
@@ -5,7 +6,7 @@ from sqlmodel import SQLModel
 
 class ResumenStats(SQLModel):
     """Respuesta del endpoint de resumen del dashboard."""
-    ventas_totales: float = 0.0
+    ventas_totales: Decimal = Decimal('0')
     pedidos_hoy: int = 0
     clientes_nuevos: int = 0
     pedidos_pendientes: int = 0
@@ -14,7 +15,7 @@ class ResumenStats(SQLModel):
 class VentaDiaria(SQLModel):
     """Ventas agregadas de un día específico."""
     fecha: date
-    total: float = 0.0
+    total: Decimal = Decimal('0')
     cantidad: int = 0
 
 
@@ -28,7 +29,7 @@ class ProductoMasVendido(SQLModel):
     producto_id: int
     nombre: str
     total_vendido: int = 0
-    ingreso_total: float = 0.0
+    ingreso_total: Decimal = Decimal('0')
 
 
 class ProductosMasVendidosResponse(SQLModel):
