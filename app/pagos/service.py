@@ -97,8 +97,17 @@ class PagoService:
 
         idempotency_key = str(uuid.uuid4())
 
+        if pago:
+            pago.idempotency_key = idempotency_key
+            self.db.flush()
+
+        request_options = mercadopago.config.RequestOptions()
+        request_options.custom_headers = {
+            "X-Idempotency-Key": idempotency_key
+        }
+
         response = self.sdk.preference().create(
-            preference_data
+            preference_data, request_options
         )
 
         logger.info("Preferencia creada en Mercado Pago")
@@ -156,7 +165,9 @@ class PagoService:
 
         mp_id = payment_data.get("id")
         mp_status = payment_data.get("status")
+        mp_status_detail = payment_data.get("status_detail")
         transaction_amount = payment_data.get("transaction_amount")
+        payment_method_id = payment_data.get("payment_method", {}).get("id")
         date_approved = payment_data.get("date_approved")
         external_reference = payment_data.get("external_reference")
 
@@ -180,7 +191,9 @@ class PagoService:
 
         pago.mp_payment_id = mp_id
         pago.mp_status = mp_status
+        pago.mp_status_detail = mp_status_detail
         pago.transaction_amount = transaction_amount
+        pago.payment_method_id = payment_method_id
 
         if date_approved:
             try:

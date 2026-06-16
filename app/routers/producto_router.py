@@ -20,6 +20,7 @@ from app.schemas.producto_schema import (
     ProductoCreate,
     ProductoUpdate,
     ProductoReadWithRelations,
+    ProductoImagenesUpdate,
     ProductoDisponibilidadUpdate
 )
 
@@ -57,9 +58,9 @@ def crear_producto(
             producto
         )
 
-        db.refresh(nuevo)
+    db.refresh(nuevo)
 
-        return nuevo
+    return nuevo
 
 
 # Listar productos
@@ -131,6 +132,34 @@ def actualizar_disponibilidad(
         producto = service.actualizar_disponibilidad(
             producto_id,
             datos
+        )
+
+        db.refresh(producto)
+
+        return producto
+
+
+# Actualizar lista de imágenes
+@router.patch(
+    "/{producto_id}/imagenes",
+    response_model=ProductoReadWithRelations
+)
+def actualizar_imagenes(
+    producto_id: int,
+    datos: ProductoImagenesUpdate,
+    db: Session = Depends(get_session),
+    current_user=Depends(
+        require_roles("ADMIN")
+    )
+):
+
+    with UnitOfWork(db):
+
+        service = ProductoService(db)
+
+        producto = service.actualizar_imagenes(
+            producto_id,
+            datos.imagenes_url
         )
 
         db.refresh(producto)

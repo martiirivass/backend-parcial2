@@ -12,6 +12,14 @@ from app.core.config import (
 
 logger = logging.getLogger(__name__)
 
+ALLOWED_MIME_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+}
+
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
 
 class CloudinaryService:
 
@@ -46,7 +54,7 @@ class CloudinaryService:
         contenido: bytes,
         public_id: str,
         folder: str = "foodstore"
-    ) -> str:
+    ) -> dict:
         """
         Sube un archivo a Cloudinary.
 
@@ -56,7 +64,7 @@ class CloudinaryService:
             folder: Carpeta dentro de Cloudinary (default: 'foodstore')
 
         Returns:
-            URL pública segura (https) de la imagen en Cloudinary
+            Dict con secure_url, public_id, width, height, format, resource_type
 
         Raises:
             HTTPException 502 si Cloudinary no está disponible
@@ -66,17 +74,22 @@ class CloudinaryService:
                 contenido,
                 public_id=public_id,
                 folder=folder,
-                overwrite=True,
+                overwrite=False,
                 resource_type="image"
             )
 
-            url = resultado.get("secure_url")
-
             logger.info(
-                f"Imagen subida a Cloudinary: {url}"
+                f"Imagen subida a Cloudinary: {resultado.get('secure_url')}"
             )
 
-            return url
+            return {
+                "secure_url": resultado.get("secure_url"),
+                "public_id": resultado.get("public_id"),
+                "width": resultado.get("width"),
+                "height": resultado.get("height"),
+                "format": resultado.get("format"),
+                "resource_type": resultado.get("resource_type", "image"),
+            }
 
         except Exception as e:
             logger.error(
@@ -90,4 +103,53 @@ class CloudinaryService:
                     "Verifique las credenciales "
                     "y la conexión."
                 )
+            )
+
+    @classmethod
+    def eliminar(cls, public_id: str) -> bool:
+        """
+        Elimina una imagen de Cloudinary por su public_id.
+
+        Args:
+            public_id: ID público de la imagen en Cloudinary
+
+        Returns:
+            True si se eliminó correctamente
+
+        Raises:
+            HTTPException 502 si Cloudinary no está disponible
+        """
+        try:
+            resultado = cloudinary.uploader.destroy(public_id)
+            if resultado.get("result") == "ok":
+                logger.info(f"Imagen eliminada de Cloudinary: {public_id}")
+                return True
+
+            logger.warning(
+                f"Cloudinary destroy no retornó ok: {resultado}"
+            )
+            return False
+
+        except Exception as e:
+            logger.error(
+                f"Error al eliminar de Cloudinary: {e}"
+            )
+            raise HTTPException(
+                status_code=502,
+                detail="Error al eliminar la imagen de Cloudinary"
+            )
+
+    @classmethod
+    def validar_imagen(cls, contenido: bytes, content_type: str) -> None:
+        """Valida tipo MIME y tamaño de una imagen."""
+        if content_type not in ALLOWED_MIME_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Tipo de archivo no soportado: {content_type}. "
+                       f"Permitidos: {', '.join(ALLOWED_MIME_TYPES)}"
+            )
+        if len(contenido) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Archivo demasiado grande. Máximo 5 MB."
             )

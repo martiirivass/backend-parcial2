@@ -71,6 +71,16 @@ class ProductoReadWithRelations(ProductoRead):
     ingredientes: List["IngredienteRead"] = []
 
 
+class ProductoImagenesUpdate(SQLModel):
+    imagenes_url: List[str]
+
+    @field_validator("imagenes_url")
+    def validar_imagenes_no_vacias(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError("Debe enviar al menos una URL de imagen")
+        return v
+
+
 class ProductoDisponibilidadUpdate(SQLModel):
     disponible: bool
     stock_cantidad: Optional[int] = None

@@ -46,15 +46,14 @@ def crear(
             ingrediente
         )
 
-        db.refresh(nuevo)
+    db.refresh(nuevo)
 
-        return nuevo
+    return nuevo
 
 
 # Listar ingredientes
 @router.get(
     "/",
-    response_model=list[IngredienteRead],
     summary="Listar ingredientes"
 )
 def listar(

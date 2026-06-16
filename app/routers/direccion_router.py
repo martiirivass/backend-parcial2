@@ -14,8 +14,8 @@ from app.models.usuario import Usuario
 from app.core.unit_of_work import UnitOfWork
 
 router = APIRouter(
-    prefix="/direcciones-entrega",
-    tags=["Direcciones de Entrega"]
+    prefix="/direcciones",
+    tags=["Direcciones"]
 )
 
 

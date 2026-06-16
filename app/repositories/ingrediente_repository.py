@@ -15,8 +15,8 @@ class IngredienteRepository(
 
     def get_all(
         self,
-        limit: int,
-        offset: int
+        limit: int = 100,
+        offset: int = 0
     ):
 
         statement = (

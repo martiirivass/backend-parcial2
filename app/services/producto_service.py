@@ -256,6 +256,24 @@ class ProductoService:
 
         self.repo.delete(producto)
 
+    # Actualizar lista de imágenes
+    def actualizar_imagenes(
+        self,
+        producto_id: int,
+        imagenes_url: list[str]
+    ):
+        producto = self.repo.get_by_id(producto_id)
+
+        if not producto:
+            raise HTTPException(
+                status_code=404,
+                detail="Producto no encontrado"
+            )
+
+        producto.imagenes_url = imagenes_url
+        self.repo.update(producto)
+        return producto
+
     # Subir imagen
     def subir_imagen(
         self,

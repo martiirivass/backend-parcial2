@@ -3,6 +3,7 @@ from app.db.database import engine
 
 # ── Modelos base (tablas independientes) ──
 from app.models.rol import Rol
+from app.models.tipo_documento_model import TipoDocumento
 from app.models.usuario import Usuario
 from app.models.estado_pedido_model import EstadoPedido
 from app.models.forma_pago_model import FormaPago
@@ -27,6 +28,7 @@ from app.auth.security import hash_password
 
 def run_seed():
     with Session(engine) as session:
+        seed_tipos_documento(session)
         seed_roles(session)
         seed_unidades_medida(session)
         seed_estados_pedido(session)
@@ -36,6 +38,25 @@ def run_seed():
         seed_productos_ejemplo(session)
         session.commit()
         print("Seed ejecutado correctamente")
+
+
+def seed_tipos_documento(session):
+    tipos_data = [
+        {"codigo": "DNI", "nombre": "Documento Nacional de Identidad", "descripcion": "DNI argentino"},
+        {"codigo": "PASAPORTE", "nombre": "Pasaporte", "descripcion": "Pasaporte extranjero"},
+        {"codigo": "CEDULA", "nombre": "Cédula de Identidad", "descripcion": "Cédula de identidad extranjera"},
+        {"codigo": "CUIL", "nombre": "CUIL/CUIT", "descripcion": "Código Único de Identificación Laboral o Tributaria"},
+    ]
+
+    for t in tipos_data:
+        existe = session.exec(
+            select(TipoDocumento).where(TipoDocumento.codigo == t["codigo"])
+        ).first()
+        if not existe:
+            session.add(TipoDocumento(**t))
+            print(f"  TipoDocumento creado: {t['codigo']}")
+        else:
+            print(f"  TipoDocumento ya existe: {t['codigo']}")
 
 
 def seed_roles(session):

@@ -12,11 +12,13 @@ from fastapi import (
 
 from sqlmodel import Session
 
+from app.core.limiter import limiter
+
 from app.auth.schemas import (
     LoginRequest,
     RegisterRequest,
     RegisterResponse,
-    LoginResponse,
+    TokenResponse,
     RefreshResponse,
     MeResponse
 )
@@ -30,7 +32,8 @@ from app.auth.security import (
     create_access_token,
     hash_token,
     SECRET_KEY,
-    ALGORITHM
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
 from app.db.database import get_session
@@ -78,21 +81,25 @@ def register(
 
         user = register_user(
             nombre=data.nombre,
+            apellido=data.apellido or "",
             email=data.email,
             password=data.password,
-            session=session
+            session=session,
+            tipo_documento_codigo=data.tipo_documento_codigo,
+            numero_documento=data.numero_documento,
         )
 
     return {
         "id": user.id,
         "nombre": user.nombre,
+        "apellido": user.apellido,
         "email": user.email
     }
 
 
 @router.post(
     "/login",
-    response_model=LoginResponse,
+    response_model=TokenResponse,
     status_code=200,
     summary="Iniciar sesión"
 )
@@ -150,7 +157,10 @@ def login(
     )
 
     return {
-        "message": "Login exitoso"
+        "access_token": token,
+        "refresh_token": refresh_token_str,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
 
 
@@ -243,7 +253,11 @@ def me(
     return {
         "id": current_user.id,
         "nombre": current_user.nombre,
+        "apellido": current_user.apellido,
         "email": current_user.email,
+        "tipo_documento_id": current_user.tipo_documento_id,
+        "numero_documento": current_user.numero_documento,
+        "created_at": current_user.created_at,
         "roles": [
             {
                 "codigo": ur.rol.codigo,

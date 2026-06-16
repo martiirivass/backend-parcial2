@@ -7,6 +7,8 @@ from app.schemas.stats_schema import (
     ResumenStats,
     VentasSemanalesResponse,
     ProductosMasVendidosResponse,
+    PedidosPorEstadoResponse,
+    IngresosPorFormaPagoResponse,
 )
 from app.services.stats_service import StatsService
 from app.auth.permissions import require_roles
@@ -46,3 +48,23 @@ def obtener_productos_mas_vendidos(
 ):
     service = StatsService(db)
     return service.get_productos_mas_vendidos(limit=limit)
+
+
+# Pedidos agrupados por estado (para gráfico PieChart)
+@router.get("/pedidos-por-estado", response_model=PedidosPorEstadoResponse)
+def obtener_pedidos_por_estado(
+    db: Session = Depends(get_session),
+    current_user = Depends(require_roles("ADMIN"))
+):
+    service = StatsService(db)
+    return service.get_pedidos_por_estado()
+
+
+# Ingresos agrupados por forma de pago (para gráfico BarChart)
+@router.get("/ingresos-por-forma-pago", response_model=IngresosPorFormaPagoResponse)
+def obtener_ingresos_por_forma_pago(
+    db: Session = Depends(get_session),
+    current_user = Depends(require_roles("ADMIN"))
+):
+    service = StatsService(db)
+    return service.get_ingresos_por_forma_pago()
