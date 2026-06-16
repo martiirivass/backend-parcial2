@@ -1,6 +1,7 @@
 from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, Column
+from sqlalchemy import ARRAY, Text
 from app.models.producto_categoria_model import ProductoCategoria
 from app.models.producto_ingrediente_model import ProductoIngrediente
 
@@ -17,7 +18,7 @@ class Producto(SQLModel, table=True):
     descripcion: Optional[str] = None
     precio_base: float
     unidad_venta_id: Optional[int] = Field(default=None, foreign_key="unidades_medida.id")
-    imagenes_url: Optional[str] = Field(default=None)
+    imagenes_url: Optional[List[str]] = Field(default=None, sa_column=Column(ARRAY(Text)))
     stock_cantidad: int = Field(default=0)
     disponible: bool = Field(default=True)
 
@@ -33,7 +34,9 @@ class Producto(SQLModel, table=True):
 
     @property
     def imagen_url(self) -> Optional[str]:
-        return self.imagenes_url
+        if self.imagenes_url and len(self.imagenes_url) > 0:
+            return self.imagenes_url[0]
+        return None
 
     # Relacion N:N con categorias
     categorias: List["Categoria"] = Relationship(

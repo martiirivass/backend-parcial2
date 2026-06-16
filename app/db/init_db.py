@@ -59,6 +59,8 @@ def _run_migrations(engine):
         conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(100)"))
         conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS transaction_amount FLOAT"))
         conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS date_approved TIMESTAMP"))
+        conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS mp_status_detail VARCHAR(100)"))
+        conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS payment_method_id VARCHAR(50)"))
 
         # 2. Renombrar columnas viejas a los nombres del modelo actual
         #    (solo si la columna vieja existe y la nueva aún no)
@@ -84,6 +86,23 @@ def _run_migrations(engine):
                    AND NOT EXISTS (SELECT 1 FROM information_schema.columns
                                    WHERE table_name='pagos' AND column_name='actualizado_en') THEN
                     ALTER TABLE pagos RENAME COLUMN updated_at TO actualizado_en;
+                END IF;
+            END $$;
+        """))
+
+        # ── Productos: imagenes_url VARCHAR → TEXT[] ────────────────
+        conn.execute(text("""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name='productos' AND column_name='imagenes_url'
+                             AND data_type IN ('character varying','text')) THEN
+                    ALTER TABLE productos
+                    ALTER COLUMN imagenes_url TYPE TEXT[]
+                    USING CASE
+                        WHEN imagenes_url IS NULL THEN NULL
+                        ELSE ARRAY[imagenes_url::text]
+                    END;
                 END IF;
             END $$;
         """))

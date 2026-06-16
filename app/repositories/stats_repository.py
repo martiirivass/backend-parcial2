@@ -229,3 +229,48 @@ class StatsRepository:
         )
 
         return self.db.exec(statement).all()
+
+    def get_pedidos_por_estado(self):
+        """Cantidad de pedidos agrupados por estado (GROUP BY)."""
+
+        return self.db.exec(
+            select(
+                Pedido.estado_codigo,
+                func.count(Pedido.id).label("cantidad"),
+            ).where(
+                Pedido.deleted_at.is_(None),
+            ).group_by(
+                Pedido.estado_codigo,
+            ).order_by(
+                Pedido.estado_codigo,
+            )
+        ).all()
+
+    def get_ingresos_por_forma_pago(self):
+        """Ingresos agrupados por forma de pago (solo pagos approved)."""
+
+        from app.models.pago_model import Pago
+
+        # Subquery: pedidos con al menos un pago mp_status='approved'
+        pedidos_aprobados = (
+            select(Pago.pedido_id)
+            .where(Pago.mp_status == "approved")
+            .subquery()
+        )
+
+        return self.db.exec(
+            select(
+                Pedido.forma_pago_codigo,
+                func.coalesce(
+                    func.sum(Pedido.total), 0.0
+                ).label("total"),
+                func.count(Pedido.id).label("cantidad"),
+            ).where(
+                Pedido.id.in_(select(pedidos_aprobados.c.pedido_id)),
+                Pedido.deleted_at.is_(None),
+            ).group_by(
+                Pedido.forma_pago_codigo,
+            ).order_by(
+                text("total DESC"),
+            )
+        ).all()

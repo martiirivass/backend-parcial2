@@ -51,6 +51,7 @@ def login_user(
 
 def register_user(
     nombre: str,
+    apellido: str,
     email: str,
     password: str,
     session: Session,
@@ -87,7 +88,7 @@ def register_user(
 
     user = Usuario(
         nombre=nombre,
-        apellido="",
+        apellido=apellido,
         email=email,
         password_hash=hash_password(password),
         tipo_documento_id=tipo_documento_id,

@@ -120,21 +120,15 @@ def seed_estados_pedido(session):
         "es_terminal": False
     },
     {
-        "codigo": "EN_CAMINO",
-        "descripcion": "Pedido en camino al cliente",
-        "orden": 4,
-        "es_terminal": False
-    },
-    {
         "codigo": "ENTREGADO",
         "descripcion": "Pedido entregado",
-        "orden": 5,
+        "orden": 4,
         "es_terminal": True
     },
     {
         "codigo": "CANCELADO",
         "descripcion": "Pedido cancelado",
-        "orden": 6,
+        "orden": 5,
         "es_terminal": True
     }
 ]

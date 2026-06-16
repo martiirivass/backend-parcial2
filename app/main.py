@@ -13,13 +13,16 @@ from app.routers.stats_router import router as stats
 from app.routers.unidad_medida_router import router as unidad_medida
 from app.routers.forma_pago_router import router as forma_pago
 from app.routers.estado_pedido_router import router as estado_pedido
-from app.routers.pago_router import router as pago
 from app.routers.ws_router import router as ws
 from app.core.ws_manager import ws_manager
 from fastapi.middleware.cors import CORSMiddleware
 from app.pagos.router import router as pagos
 from app.services.cloudinary_service import CloudinaryService
+from app.routers.uploads_router import router as uploads_router
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.middleware import SlowAPIMiddleware
+from app.core.limiter import limiter
 
 from sqlmodel import Session
 from app.db.database import engine
@@ -29,6 +32,9 @@ print("[OK] Imports completados")
 
 app = FastAPI()
 print("[OK] FastAPI app creada")
+
+app.state.limiter = limiter
+app.add_exception_handler(429, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +49,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 print("[OK] CORS middleware agregado")
+
+app.add_middleware(SlowAPIMiddleware)
+print("[OK] Rate limiting middleware agregado")
 
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
@@ -90,11 +99,11 @@ app.include_router(forma_pago, prefix="/api/v1")
 print("[OK] FormaPago router incluido")
 app.include_router(estado_pedido, prefix="/api/v1")
 print("[OK] EstadoPedido router incluido")
-app.include_router(pago, prefix="/api/v1")
-print("[OK] Pago router incluido")
 app.include_router(ws)
 print("[OK] WebSocket router incluido")
 app.include_router(pagos, prefix="/api/v1")
 print("[OK] Pagos router incluido")
+app.include_router(uploads_router, prefix="/api/v1")
+print("[OK] Uploads router incluido")
 
 print("*** APP LISTA ***")

@@ -101,11 +101,13 @@ class ImagenService:
         # ── Cloudinary (si configurado) ──
         if cloudinary_configurado():
 
-            url = CloudinaryService.subir(
+            resultado = CloudinaryService.subir(
                 contenido,
                 public_id=nombre_archivo,
                 folder="foodstore"
             )
+
+            url = resultado["secure_url"]
 
             logger.info(
                 f"Imagen subida a Cloudinary: {url}"

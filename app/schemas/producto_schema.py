@@ -13,7 +13,7 @@ class ProductoBase(SQLModel):
     descripcion: Optional[str] = None
     precio_base: float
     unidad_venta_id: Optional[int] = None
-    imagenes_url: Optional[str] = None
+    imagenes_url: Optional[List[str]] = None
     stock_cantidad: int = 0
     disponible: bool = True
 
@@ -46,7 +46,7 @@ class ProductoUpdate(SQLModel):
     descripcion: Optional[str] = None
     precio_base: Optional[float] = None
     unidad_venta_id: Optional[int] = None
-    imagenes_url: Optional[str] = None
+    imagenes_url: Optional[List[str]] = None
     stock_cantidad: Optional[int] = None
     disponible: Optional[bool] = None
     categoria_ids: Optional[List[int]] = None
@@ -68,6 +68,16 @@ class ProductoRead(ProductoBase):
 class ProductoReadWithRelations(ProductoRead):
     categorias: List["CategoriaRead"] = []
     ingredientes: List["IngredienteRead"] = []
+
+
+class ProductoImagenesUpdate(SQLModel):
+    imagenes_url: List[str]
+
+    @field_validator("imagenes_url")
+    def validar_imagenes_no_vacias(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError("Debe enviar al menos una URL de imagen")
+        return v
 
 
 class ProductoDisponibilidadUpdate(SQLModel):
