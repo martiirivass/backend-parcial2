@@ -10,6 +10,10 @@ from app.schemas.stats_schema import (
     VentasSemanalesResponse,
     ProductoMasVendido,
     ProductosMasVendidosResponse,
+    PedidosPorEstadoItem,
+    PedidosPorEstadoResponse,
+    IngresoPorFormaPagoItem,
+    IngresosPorFormaPagoResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -81,3 +85,32 @@ class StatsService:
         return ProductosMasVendidosResponse(
             data=data
         )
+
+    def get_pedidos_por_estado(self) -> PedidosPorEstadoResponse:
+
+        rows = self.repo.get_pedidos_por_estado()
+
+        data = [
+            PedidosPorEstadoItem(
+                estado_codigo=row.estado_codigo,
+                cantidad=int(row.cantidad),
+            )
+            for row in rows
+        ]
+
+        return PedidosPorEstadoResponse(data=data)
+
+    def get_ingresos_por_forma_pago(self) -> IngresosPorFormaPagoResponse:
+
+        rows = self.repo.get_ingresos_por_forma_pago()
+
+        data = [
+            IngresoPorFormaPagoItem(
+                forma_pago_codigo=row.forma_pago_codigo,
+                total=float(row.total),
+                cantidad=int(row.cantidad),
+            )
+            for row in rows
+        ]
+
+        return IngresosPorFormaPagoResponse(data=data)

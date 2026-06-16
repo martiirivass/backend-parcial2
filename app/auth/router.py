@@ -12,13 +12,14 @@ from fastapi import (
 
 from sqlmodel import Session
 
+from app.core.limiter import limiter
+
 from app.auth.schemas import (
     LoginRequest,
     RegisterRequest,
     RegisterResponse,
-    LoginResponse,
+    TokenResponse,
     RefreshResponse,
-    LogoutResponse,
     MeResponse
 )
 
@@ -31,7 +32,8 @@ from app.auth.security import (
     create_access_token,
     hash_token,
     SECRET_KEY,
-    ALGORITHM
+    ALGORITHM,
+    ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
 from app.db.database import get_session
@@ -66,7 +68,9 @@ router = APIRouter(
     status_code=201,
     summary="Registrar usuario cliente"
 )
+@limiter.limit("5/15minutes")
 def register(
+    request: Request,
     data: RegisterRequest,
     session: Session = Depends(get_session)
 ):
@@ -75,6 +79,7 @@ def register(
 
         user = register_user(
             nombre=data.nombre,
+            apellido=data.apellido or "",
             email=data.email,
             password=data.password,
             session=session,
@@ -85,17 +90,20 @@ def register(
     return {
         "id": user.id,
         "nombre": user.nombre,
+        "apellido": user.apellido,
         "email": user.email
     }
 
 
 @router.post(
     "/login",
-    response_model=LoginResponse,
+    response_model=TokenResponse,
     status_code=200,
     summary="Iniciar sesión"
 )
+@limiter.limit("5/15minutes")
 def login(
+    request: Request,
     data: LoginRequest,
     response: Response,
     session: Session = Depends(get_session)
@@ -147,7 +155,10 @@ def login(
     )
 
     return {
-        "message": "Login exitoso"
+        "access_token": token,
+        "refresh_token": refresh_token_str,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
 
 
@@ -240,9 +251,11 @@ def me(
     return {
         "id": current_user.id,
         "nombre": current_user.nombre,
+        "apellido": current_user.apellido,
         "email": current_user.email,
         "tipo_documento_id": current_user.tipo_documento_id,
         "numero_documento": current_user.numero_documento,
+        "created_at": current_user.created_at,
         "roles": [
             {
                 "codigo": ur.rol.codigo,
@@ -255,8 +268,7 @@ def me(
 
 @router.post(
     "/logout",
-    response_model=LogoutResponse,
-    status_code=200,
+    status_code=204,
     summary="Cerrar sesión"
 )
 def logout(
@@ -265,7 +277,3 @@ def logout(
 
     response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
-
-    return {
-        "message": "Sesión cerrada"
-    }

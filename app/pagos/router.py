@@ -72,6 +72,12 @@ async def webhook(
     except Exception:
         pass
 
+    if topic and topic != "payment":
+        logger.info(
+            f"Webhook ignorado — topic '{topic}' no es 'payment'"
+        )
+        return WebhookResponse(recibido=True)
+
     if not data_id:
         logger.warning("Webhook recibido sin payment_id")
         return WebhookResponse(recibido=True)

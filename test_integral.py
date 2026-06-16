@@ -3,8 +3,8 @@ Test integral del backend.
 Requiere que el seed se haya ejecutado (init_db corrió al menos una vez).
 Correr con: python test_integral.py
 """
-from sqlmodel import Session, select
-from app.db.database import engine
+from sqlmodel import select
+from conftest import get_db, make_uow, make_repos, create_test_user
 from app.models.usuario import Usuario
 from app.models.rol import Rol
 from app.models.unidad_medida_model import UnidadMedida
@@ -18,15 +18,8 @@ from app.models.detalle_pedido_model import DetallePedido
 from app.models.historial_estado_model import HistorialEstadoPedido
 from app.models.pago_model import Pago
 from app.models.refresh_token_model import RefreshToken
-from app.repositories.categoria_repository import CategoriaRepository
-from app.repositories.producto_repository import ProductoRepository
-from app.repositories.ingrediente_repository import IngredienteRepository
-from app.repositories.pedido_repository import PedidoRepository
-from app.repositories.pago_repository import PagoRepository
-from app.repositories.refresh_token_repository import RefreshTokenRepository
+from app.auth.security import hash_password, verify_password, create_access_token, hash_token
 from app.core.unit_of_work import UnitOfWork
-from app.auth.security import hash_password, hash_token, verify_password, create_access_token
-from app.auth.services import register_user
 from datetime import datetime, timezone
 
 ok = 0
@@ -37,21 +30,22 @@ def check(nombre, condicion, detalle=""):
     global ok, fail
     if condicion:
         ok += 1
-        print(f"  ✅ {nombre}")
+        print(f"  [OK] {nombre}")
     else:
         fail += 1
-        print(f"  ❌ {nombre} — {detalle}")
+        print(f"  [FAIL] {nombre} - {detalle}")
 
 
 print("=" * 60)
-print("TEST INTEGRAL — BACKEND PARCIAL 2")
+print("TEST INTEGRAL - BACKEND PARCIAL 2")
 print("=" * 60)
 
-db = Session(engine)
+db = get_db()
+repos = make_repos(db)
 
 try:
     # ============================================================
-    print("\n📦 1. SEED DATA — Catalogos basicos")
+    print("\n--- 1. SEED DATA --- Catalogos basicos")
     # ============================================================
     roles = db.exec(select(Rol)).all()
     check("Roles creados", len(roles) >= 4, f"Tiene {len(roles)}")
@@ -66,7 +60,7 @@ try:
     check("Formas de pago creadas", len(formas) >= 3, f"Tiene {len(formas)}")
 
     # ============================================================
-    print("\n📦 2. SEED DATA — Admin y demo")
+    print("\n--- 2. SEED DATA --- Admin y demo")
     # ============================================================
     admin = db.exec(select(Usuario).where(Usuario.email == "admin@foodstore.com")).first()
     check("Admin creado", admin is not None)
@@ -84,88 +78,58 @@ try:
     check("Productos de ejemplo creados", len(productos) >= 4, f"Tiene {len(productos)}")
 
     # ============================================================
-    print("\n📦 3. SOFT DELETE")
+    print("\n--- 3. SOFT DELETE")
     # ============================================================
-    cat_repo = CategoriaRepository(db)
-    todas_cat = cat_repo.get_all()
+    todas_cat = repos["categoria"].get_all()
     if len(todas_cat) > 0:
         cat_para_borrar = todas_cat[0]
         cat_id = cat_para_borrar.id
-        cat_repo.delete(cat_para_borrar)
+        repos["categoria"].delete(cat_para_borrar)
         db.commit()
 
-        # Verifico que no aparezca en get_all
-        despues = cat_repo.get_all()
+        despues = repos["categoria"].get_all()
         check("Soft delete: categoria no aparece en get_all()", cat_id not in [c.id for c in despues])
 
-        # Verifico que el deleted_at tenga fecha
         cat_db = db.get(Categoria, cat_id)
         check("Soft delete: deleted_at tiene fecha", cat_db.deleted_at is not None)
 
-        # Restauro para no romper tests siguientes
         cat_db.deleted_at = None
         db.add(cat_db)
         db.commit()
 
     # ============================================================
-    print("\n📦 4. USUARIOS — Register y Password")
+    print("\n--- 4. USUARIOS --- Register y Password")
     # ============================================================
     check("Hash password funciona", verify_password("admin123", admin.password_hash) if admin else False)
     check("Hash password rechaza incorrecta", not verify_password("wrong", admin.password_hash) if admin else False)
 
     # ============================================================
-    print("\n📦 5. REPOSITORIOS — CRUD basico")
+    print("\n--- 5. REPOSITORIOS --- CRUD basico")
     # ============================================================
-    prod_repo = ProductoRepository(db)
-    todos_prod = prod_repo.get_all()
+    todos_prod = repos["producto"].get_all()
     check("ProductoRepository.get_all()", len(todos_prod) > 0, f"Tiene {len(todos_prod)}")
 
     if len(todos_prod) > 0:
-        un_producto = prod_repo.get_by_id(todos_prod[0].id)
+        un_producto = repos["producto"].get_by_id(todos_prod[0].id)
         check("ProductoRepository.get_by_id()", un_producto is not None)
 
-    pedido_repo = PedidoRepository(db)
-    todos_ped = pedido_repo.get_all()
+    todos_ped = repos["pedido"].get_all()
     check("PedidoRepository.get_all() (vacio ok)", isinstance(todos_ped, list))
 
     # ============================================================
-    print("\n📦 6. PEDIDOS — Creacion y workflow")
+    print("\n--- 6. PEDIDOS --- Creacion y workflow")
     # ============================================================
     from app.services.pedido_service import PedidoService
     from app.schemas.pedido_schema import PedidoCreate, DetallePedidoCreate
 
     ps = PedidoService(db)
 
-    # Busco un CLIENT para crear pedido
-    # Creo un usuario de prueba si no existe
-    cliente = db.exec(select(Usuario).where(Usuario.email == "test@test.com")).first()
-    if not cliente:
-        uow = UnitOfWork(db)
-        try:
-            cliente = register_user(
-                nombre="Test",
-                email="test@test.com",
-                password="test123",
-                session=db
-            )
-            # Le asigno rol CLIENT
-            from app.models.usuario_rol_model import UsuarioRol
-            rol_cliente = db.exec(select(Rol).where(Rol.codigo == "CLIENT")).first()
-            if rol_cliente:
-                ur = UsuarioRol(usuario_id=cliente.id, rol_codigo=rol_cliente.codigo)
-                db.add(ur)
-            uow.commit()
-            db.refresh(cliente)
-        except Exception:
-            uow.rollback()
-            cliente = None
-
+    cliente = create_test_user(db)
     check("Usuario CLIENT creado para tests", cliente is not None)
 
     if cliente and len(productos) > 0:
-        # Creo pedido
         try:
-            uow2 = UnitOfWork(db)
+            uow2 = make_uow(db)
             pedido_creado = ps.crear_pedido(cliente.id, PedidoCreate(
                 forma_pago_codigo="EFECTIVO",
                 items=[DetallePedidoCreate(producto_id=productos[0].id, cantidad=2)]
@@ -176,7 +140,6 @@ try:
             check("Pedido tiene subtotal", pedido_creado.subtotal > 0)
             check("Pedido tiene costo_envio", pedido_creado.costo_envio > 0)
 
-            # Verifico detalle
             detalles = db.exec(
                 select(DetallePedido).where(DetallePedido.pedido_id == pedido_creado.id)
             ).all()
@@ -188,7 +151,6 @@ try:
                 check("Snapshot: subtotal_snap calculado", d.subtotal_snap > 0)
                 check("Snapshot: cantidad correcta", d.cantidad == 2)
 
-            # Verifico historial
             historial = db.exec(
                 select(HistorialEstadoPedido)
                 .where(HistorialEstadoPedido.pedido_id == pedido_creado.id)
@@ -197,13 +159,11 @@ try:
             if len(historial) > 0:
                 check("Historial: estado_hacia correcto", historial[0].estado_hacia == "PENDIENTE")
 
-            # Avanzo estado
             pedido_avanzado = ps.avanzar_estado(pedido_creado.id, "CONFIRMADO", cliente.id)
             pedido_avanzado2 = ps.avanzar_estado(pedido_creado.id, "EN_PREP", cliente.id)
             pedido_avanzado3 = ps.avanzar_estado(pedido_creado.id, "ENTREGADO", cliente.id)
             check("Estado avanzado a ENTREGADO", pedido_avanzado3.estado_codigo == "ENTREGADO")
 
-            # Verifico historial actualizado
             historial2 = db.exec(
                 select(HistorialEstadoPedido)
                 .where(HistorialEstadoPedido.pedido_id == pedido_creado.id)
@@ -211,10 +171,6 @@ try:
             ).all()
             check("Historial: 4 entradas (PEND+CONF+EN_PREP+ENTREGADO)", len(historial2) == 4)
 
-            # Transicion invalida (ENTREGADO -> CANCELADO no es valida)
-            check("Estado avanzado a ENTREGADO", pedido_avanzado3.estado_codigo == "ENTREGADO")
-
-            # Intento transicion invalida
             try:
                 ps.avanzar_estado(pedido_creado.id, "CANCELADO", cliente.id)
                 check("Transicion invalida ENTREGADO->CANCELADO RECHAZADA", False, "Deberia haber lanzado excepcion")
@@ -226,7 +182,7 @@ try:
             check(f"Error en test de pedidos: {e}", False, str(e))
 
     # ============================================================
-    print("\n📦 7. PAGOS — Registro")
+    print("\n--- 7. PAGOS --- Registro")
     # ============================================================
     if cliente and len(productos) > 0:
         from app.services.pago_service import PagoService
@@ -234,14 +190,12 @@ try:
 
         pago_svc = PagoService(db)
         try:
-            uow3 = UnitOfWork(db)
-            # Creo un pedido nuevo para pagar
+            uow3 = make_uow(db)
             pedido_pago = ps.crear_pedido(cliente.id, PedidoCreate(
                 forma_pago_codigo="EFECTIVO",
                 items=[DetallePedidoCreate(producto_id=productos[0].id, cantidad=1)]
             ))
 
-            # Avanzo a CONFIRMADO, EN_PREP y ENTREGADO para poder pagar
             ps.avanzar_estado(pedido_pago.id, "CONFIRMADO", cliente.id)
             ps.avanzar_estado(pedido_pago.id, "EN_PREP", cliente.id)
             ps.avanzar_estado(pedido_pago.id, "ENTREGADO", cliente.id)
@@ -256,7 +210,6 @@ try:
             check("Pago forma_pago_codigo correcto", pago.forma_pago_codigo == "EFECTIVO")
             check("Pago tiene referencia nullable", pago.referencia is None)
 
-            # Pago duplicado deberia fallar (excede saldo)
             try:
                 pago_svc.registrar_pago(PagoCreate(
                     pedido_id=pedido_pago.id,
@@ -272,11 +225,9 @@ try:
             check(f"Error en test de pagos: {e}", False, str(e))
 
     # ============================================================
-    print("\n📦 8. REFRESH TOKENS")
+    print("\n--- 8. REFRESH TOKENS")
     # ============================================================
-    repo_rt = RefreshTokenRepository(db)
     if admin:
-        # Creo un refresh token manualmente
         import secrets
         from datetime import timedelta
 
@@ -289,18 +240,17 @@ try:
         db.add(rt)
         db.commit()
 
-        valido = repo_rt.get_valid_token(hash_token(raw_token))
+        valido = repos["refresh_token"].get_valid_token(hash_token(raw_token))
         check("RefreshTokenRepository: token valido encontrado", valido is not None)
         check("RefreshTokenRepository: token pertenece al admin", valido.usuario_id == admin.id if valido else False)
 
-        # Revoco
-        repo_rt.revoke_user_tokens(admin.id)
+        repos["refresh_token"].revoke_user_tokens(admin.id)
         db.commit()
-        invalido = repo_rt.get_valid_token(hash_token(raw_token))
+        invalido = repos["refresh_token"].get_valid_token(hash_token(raw_token))
         check("RefreshTokenRepository: token revocado no es valido", invalido is None)
 
     # ============================================================
-    print("\n📦 9. PRODUCTOS — Nuevos campos")
+    print("\n--- 9. PRODUCTOS --- Nuevos campos")
     # ============================================================
     if len(productos) > 0:
         p = productos[0]
@@ -312,7 +262,7 @@ try:
         check("Producto tiene deleted_at (nullable)", hasattr(p, "deleted_at") and p.deleted_at is None)
 
     # ============================================================
-    print("\n📦 10. CATEGORIAS — Nuevos campos")
+    print("\n--- 10. CATEGORIAS --- Nuevos campos")
     # ============================================================
     if len(categorias) > 0:
         c = categorias[0]
@@ -322,14 +272,13 @@ try:
 
 except Exception as e:
     import traceback
-    print(f"\n💥 ERROR FATAL: {e}")
+    print(f"\nERROR FATAL: {e}")
     traceback.print_exc()
     fail += 1
 
 finally:
     db.close()
 
-# ============================================================
 print(f"\n{'=' * 60}")
-print(f"RESULTADOS: {ok} pasaron ✅ | {fail} fallaron ❌")
+print(f"RESULTADOS: {ok} pasaron | {fail} fallaron")
 print(f"{'=' * 60}")
