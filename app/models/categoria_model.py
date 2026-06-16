@@ -1,5 +1,5 @@
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
 from app.models.producto_categoria_model import ProductoCategoria
 
@@ -19,8 +19,8 @@ class Categoria(SQLModel, table=True):
     deleted_at: Optional[datetime] = Field(default=None)
     
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Imagen de la categoría
     imagen_url: Optional[str] = Field(default=None)

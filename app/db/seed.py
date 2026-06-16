@@ -219,8 +219,12 @@ def seed_categorias_ingredientes(session):
             categorias[c["nombre"]] = nueva
             print(f"  Categoria creada: {c['nombre']}")
         else:
+            if existe.deleted_at is not None:
+                existe.deleted_at = None
+                print(f"  Categoria restaurada: {c['nombre']}")
+            else:
+                print(f"  Categoria ya existe: {c['nombre']}")
             categorias[c["nombre"]] = existe
-            print(f"  Categoria ya existe: {c['nombre']}")
 
     ingredientes_data = [
         {"nombre": "Carne de res", "descripcion": "Carne molida de res 200g", "es_alergeno": False},
@@ -248,7 +252,11 @@ def seed_categorias_ingredientes(session):
             session.add(Ingrediente(**i))
             print(f"  Ingrediente creado: {i['nombre']}")
         else:
-            print(f"  Ingrediente ya existe: {i['nombre']}")
+            if existe.deleted_at is not None:
+                existe.deleted_at = None
+                print(f"  Ingrediente restaurado: {i['nombre']}")
+            else:
+                print(f"  Ingrediente ya existe: {i['nombre']}")
 
     return categorias
 
@@ -372,7 +380,11 @@ def seed_productos_ejemplo(session):
             select(Producto).where(Producto.nombre == p["nombre"])
         ).first()
         if existe:
-            print(f"  Producto ya existe: {p['nombre']}")
+            if existe.deleted_at is not None:
+                existe.deleted_at = None
+                print(f"  Producto restaurado: {p['nombre']}")
+            else:
+                print(f"  Producto ya existe: {p['nombre']}")
             continue
 
         ingred = p.pop("ingredientes")

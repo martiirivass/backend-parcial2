@@ -27,6 +27,10 @@ class PedidoCreate(SQLModel):
         default=None, max_length=200,
         description="Referencia del pago (CBU para transferencia, últimos 4 dígitos para tarjeta)"
     )
+    codigo_descuento: Optional[str] = Field(
+        default=None, max_length=20,
+        description="Código de descuento promocional"
+    )
 
     @field_validator("items")
     def validar_items(cls, v):
@@ -41,7 +45,7 @@ class AvanceEstadoRequest(SQLModel):
 
 
 class CancelarPedidoRequest(SQLModel):
-    motivo: str
+    motivo: Optional[str] = None
 
 
 class DetallePedidoRead(SQLModel):
@@ -79,3 +83,6 @@ class PedidoReadWithDetails(PedidoRead):
 class PedidoListResponse(SQLModel):
     data: List[PedidoReadWithDetails]
     total: int
+    page: int
+    size: int
+    pages: int

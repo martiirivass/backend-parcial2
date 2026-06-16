@@ -16,12 +16,16 @@ from sqlmodel import Session
 from app.auth.permissions import require_roles
 from app.db.database import get_session
 
+from app.schemas.ingrediente_schema import IngredienteRead
+
 from app.schemas.producto_schema import (
     ProductoCreate,
     ProductoUpdate,
     ProductoReadWithRelations,
     ProductoImagenesUpdate,
-    ProductoDisponibilidadUpdate
+    ProductoDisponibilidadUpdate,
+    ProductoIngredienteCreate,
+    ProductoIngredienteRead
 )
 
 from app.services.producto_service import (
@@ -244,3 +248,43 @@ def subir_imagen(
         db.refresh(producto)
 
         return producto
+
+
+# Listar ingredientes de un producto
+@router.get(
+    "/{producto_id}/ingredientes",
+    response_model=list[IngredienteRead]
+)
+def listar_ingredientes(
+    producto_id: int,
+    db: Session = Depends(get_session)
+):
+    service = ProductoService(db)
+
+    return service.obtener_ingredientes(
+        producto_id
+    )
+
+
+# Agregar ingrediente a producto
+@router.post(
+    "/{producto_id}/ingredientes",
+    response_model=ProductoIngredienteRead,
+    status_code=201
+)
+def agregar_ingrediente(
+    producto_id: int,
+    data: ProductoIngredienteCreate,
+    db: Session = Depends(get_session),
+    current_user=Depends(
+        require_roles("ADMIN")
+    )
+):
+    with UnitOfWork(db):
+
+        service = ProductoService(db)
+
+        return service.agregar_ingrediente(
+            producto_id,
+            data
+        )

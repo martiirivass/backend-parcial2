@@ -1,5 +1,7 @@
 # Food Store — API Backend
 
+[GitHub](https://github.com/martiirivass/backend-parcial2)
+
 Backend REST de Food Store, una aplicación de gestión de pedidos para delivery. Construido con **FastAPI**, **SQLModel** y **PostgreSQL**, con integración de pagos vía **MercadoPago** y notificaciones en tiempo real via **WebSocket**.
 
 ---
@@ -283,21 +285,26 @@ Todos los endpoints REST están bajo el prefijo `/api/v1/`.
 | POST   | `/api/v1/auth/refresh`     | Refrescar token JWT            |
 
 ### Productos
-| Método | Ruta                              | Descripción                     |
-|--------|-----------------------------------|---------------------------------|
-| GET    | `/api/v1/productos`               | Listar productos                |
-| GET    | `/api/v1/productos/{id}`          | Obtener producto por ID         |
-| POST   | `/api/v1/productos`               | Crear producto (admin)          |
-| PUT    | `/api/v1/productos/{id}`          | Actualizar producto (admin)     |
-| DELETE | `/api/v1/productos/{id}`          | Soft delete (admin)             |
+| Método | Ruta                                       | Descripción                     |
+|--------|--------------------------------------------|---------------------------------|
+| GET    | `/api/v1/productos`                        | Listar productos                |
+| GET    | `/api/v1/productos/{id}`                   | Obtener producto por ID         |
+| POST   | `/api/v1/productos`                        | Crear producto (admin)          |
+| PUT    | `/api/v1/productos/{id}`                   | Actualizar producto (admin)     |
+| DELETE | `/api/v1/productos/{id}`                   | Soft delete (admin)             |
+| GET    | `/api/v1/productos/{id}/ingredientes`      | Listar ingredientes del producto |
+| POST   | `/api/v1/productos/{id}/ingredientes`      | Agregar ingrediente (admin)     |
 
 ### Pedidos
-| Método | Ruta                              | Descripción                     |
-|--------|-----------------------------------|---------------------------------|
-| GET    | `/api/v1/pedidos`                 | Listar pedidos (admin)          |
-| POST   | `/api/v1/pedidos`                 | Crear pedido (cliente)          |
-| GET    | `/api/v1/pedidos/{id}`            | Obtener pedido por ID           |
-| PUT    | `/api/v1/pedidos/{id}/estado`     | Cambiar estado (admin)          |
+| Método | Ruta                                      | Descripción                     |
+|--------|-------------------------------------------|---------------------------------|
+| GET    | `/api/v1/pedidos`                         | Listar pedidos (admin)          |
+| POST   | `/api/v1/pedidos`                         | Crear pedido (cliente)          |
+| GET    | `/api/v1/pedidos/{id}`                    | Obtener pedido por ID           |
+| PUT    | `/api/v1/pedidos/{id}/estado`             | Cambiar estado (admin)          |
+| DELETE | `/api/v1/pedidos/{id}`                    | Eliminar pedido (cliente propio)|
+| PATCH  | `/api/v1/pedidos/{id}/cancelar`           | Cancelar pedido con motivo      |
+| PATCH  | `/api/v1/pedidos/{id}/estado`             | Avanzar estado (admin)          |
 
 ---
 

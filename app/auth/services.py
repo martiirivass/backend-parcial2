@@ -1,5 +1,8 @@
+from datetime import datetime, timedelta, UTC
+import secrets
 from typing import Optional
 
+import jwt
 from fastapi import HTTPException
 from sqlmodel import Session, select
 
@@ -7,13 +10,29 @@ from app.auth.security import (
     hash_password,
     verify_password,
     create_access_token,
+    hash_token,
+    SECRET_KEY,
+    ALGORITHM,
 )
 
 from app.models.usuario import Usuario
 from app.models.usuario_rol_model import UsuarioRol
 from app.models.tipo_documento_model import TipoDocumento
+from app.models.refresh_token_model import RefreshToken
 
 from app.repositories.auth_repository import AuthRepository
+from app.repositories.refresh_token_repository import RefreshTokenRepository
+
+
+def _create_refresh_token(session: Session, usuario_id: int) -> str:
+    raw = secrets.token_urlsafe(64)
+    refresh = RefreshToken(
+        usuario_id=usuario_id,
+        token_hash=hash_token(raw),
+        expires_at=datetime.now(UTC) + timedelta(days=7),
+    )
+    session.add(refresh)
+    return raw
 
 
 def login_user(
@@ -46,7 +65,9 @@ def login_user(
         "sub": str(user.id)
     })
 
-    return token
+    refresh_token_str = _create_refresh_token(session, user.id)
+
+    return token, refresh_token_str
 
 
 def register_user(
@@ -113,3 +134,27 @@ def register_user(
 
 def get_me(current_user: Usuario):
     return current_user
+
+
+def refresh_user_token(session: Session, refresh_token_str: str) -> tuple[str, str]:
+    if not refresh_token_str:
+        raise HTTPException(status_code=400, detail="Refresh token requerido")
+
+    repo = RefreshTokenRepository(session)
+    stored = repo.get_valid_token(hash_token(refresh_token_str))
+
+    if not stored:
+        raise HTTPException(status_code=401, detail="Refresh token inválido o expirado")
+
+    stored.revoked_at = datetime.now(UTC)
+    session.add(stored)
+
+    new_token = create_access_token({"sub": str(stored.usuario_id)})
+    new_raw = _create_refresh_token(session, stored.usuario_id)
+
+    return new_token, new_raw
+
+
+def revoke_user_tokens(session: Session, usuario_id: int) -> None:
+    repo = RefreshTokenRepository(session)
+    repo.revoke_user_tokens(usuario_id)

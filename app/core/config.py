@@ -1,4 +1,5 @@
 from pathlib import Path
+from decimal import Decimal
 
 from pydantic_settings import BaseSettings
 
@@ -16,6 +17,8 @@ ALLOWED_IMAGE_EXTENSIONS = {
     ".webp"
 }
 
+COSTO_ENVIO_DEFAULT = Decimal("50.00")
+
 
 class Settings(BaseSettings):
 
@@ -29,6 +32,9 @@ class Settings(BaseSettings):
     MP_ACCESS_TOKEN: str | None = None
     MP_PUBLIC_KEY: str | None = None
     MP_NOTIFICATION_URL: str | None = None
+
+    # CORS
+    CORS_ORIGINS: str = '["http://localhost:5173","http://127.0.0.1:5173","http://localhost:5174","http://127.0.0.1:5174"]'
 
     # Cloudinary
     CLOUDINARY_CLOUD_NAME: str | None = None

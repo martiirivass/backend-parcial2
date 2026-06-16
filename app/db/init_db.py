@@ -107,5 +107,52 @@ def _run_migrations(engine):
             END $$;
         """))
 
+        # ── Remover EN_CAMINO de estados_pedido (spec v7) ────────────
+        conn.execute(text("""
+            DELETE FROM estados_pedido
+            WHERE codigo = 'EN_CAMINO'
+        """))
+
+        # ── Migrar campos monetarios FLOAT → NUMERIC(10,2) ───────────
+        conn.execute(text("""
+            ALTER TABLE pedidos
+            ALTER COLUMN subtotal TYPE NUMERIC(10,2) USING subtotal::numeric(10,2),
+            ALTER COLUMN descuento TYPE NUMERIC(10,2) USING descuento::numeric(10,2),
+            ALTER COLUMN costo_envio TYPE NUMERIC(10,2) USING costo_envio::numeric(10,2),
+            ALTER COLUMN total TYPE NUMERIC(10,2) USING total::numeric(10,2)
+        """))
+        conn.execute(text("""
+            ALTER TABLE detalles_pedido
+            ALTER COLUMN precio_snapshot TYPE NUMERIC(10,2) USING precio_snapshot::numeric(10,2),
+            ALTER COLUMN subtotal_snap TYPE NUMERIC(10,2) USING subtotal_snap::numeric(10,2)
+        """))
+        conn.execute(text("""
+            ALTER TABLE productos
+            ALTER COLUMN precio_base TYPE NUMERIC(10,2) USING precio_base::numeric(10,2)
+        """))
+        conn.execute(text("""
+            ALTER TABLE pagos
+            ALTER COLUMN transaction_amount TYPE NUMERIC(10,2) USING transaction_amount::numeric(10,2)
+        """))
+        conn.execute(text("""
+            ALTER TABLE pagos
+            ALTER COLUMN monto TYPE NUMERIC(10,2) USING monto::numeric(10,2)
+        """))
+
+        # ── Ingredientes: stock_cantidad ───────────────────────────────
+        conn.execute(text("""
+            ALTER TABLE ingredientes
+            ADD COLUMN IF NOT EXISTS stock_cantidad INTEGER NOT NULL DEFAULT 0
+        """))
+
+        # ── Pagos: idempotency_key UNIQUE ────────────────────────────
+        # Postgres no permite UNIQUE con NULLs duplicados por defecto,
+        # así que creamos un índice único parcial que ignore NULLs.
+        conn.execute(text("""
+            CREATE UNIQUE INDEX IF NOT EXISTS ix_pagos_idempotency_key
+            ON pagos (idempotency_key)
+            WHERE idempotency_key IS NOT NULL
+        """))
+
         conn.commit()
         print("[init_db] Migraciones aplicadas correctamente")

@@ -1,3 +1,4 @@
+from .admin_repository import AdminRepository
 from .categoria_repository import CategoriaRepository
 from .producto_repository import ProductoRepository
 from .ingrediente_repository import IngredienteRepository

@@ -1,12 +1,14 @@
 import logging
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
 
 from app.auth.dependencies import get_current_user
 from app.core.config import settings
+from app.core.unit_of_work import UnitOfWork
+from app.core.ws_manager import ws_manager
 from app.db.database import get_session
 from app.models.usuario import Usuario
 from app.pagos.schemas import (
@@ -42,18 +44,23 @@ def health_check():
 
 @router.post(
     "/crear-preferencia",
-    response_model=CrearPreferenciaResponse
+    response_model=CrearPreferenciaResponse,
+    status_code=201,
 )
 def crear_preferencia(
     request: CrearPreferenciaRequest,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user),
 ):
+    if not settings.MP_ACCESS_TOKEN or settings.MP_ACCESS_TOKEN == "TEST":
+        raise HTTPException(
+            status_code=400,
+            detail="Mercado Pago no está configurado. Configurá MP_ACCESS_TOKEN en el .env del backend."
+        )
+
     service = PagoService(db)
-    return service.crear_preferencia(
-        request,
-        current_user.id
-    )
+    with UnitOfWork(db):
+        return service.crear_preferencia(request, current_user.id)
 
 
 @router.post("/webhook")
@@ -84,8 +91,11 @@ async def webhook(
 
     logger.info(f"Webhook procesando — payment_id: {data_id}, topic: {topic}")
 
-    service = PagoService(db)
-    service.process_webhook(str(data_id))
+    service = PagoService(db, ws_manager)
+    with UnitOfWork(db):
+        service.process_webhook(str(data_id))
+
+    service.flush_events()
 
     return WebhookResponse(recibido=True)
 
@@ -100,4 +110,5 @@ def get_pago_status(
     current_user: Usuario = Depends(get_current_user),
 ):
     service = PagoService(db)
-    return service.get_pago_status(pedido_id, current_user.id)
+    with UnitOfWork(db):
+        return service.get_pago_status(pedido_id, current_user.id)

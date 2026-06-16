@@ -1,4 +1,5 @@
 from typing import Generic, Optional, TypeVar, List
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Session, select
 
 T = TypeVar("T", bound=SQLModel)
@@ -11,9 +12,10 @@ class BaseRepository(Generic[T]):
         self.model_class = model_class
 
     def get_all(self) -> List[T]:
-        return self.db.exec(
-            select(self.model_class)
-        ).all()
+        stmt = select(self.model_class)
+        if hasattr(self.model_class, 'deleted_at'):
+            stmt = stmt.where(self.model_class.deleted_at.is_(None))
+        return self.db.exec(stmt).all()
 
     def get_by_id(self, id: int) -> Optional[T]:
         return self.db.get(self.model_class, id)
@@ -31,4 +33,8 @@ class BaseRepository(Generic[T]):
         return entity
 
     def delete(self, entity: T) -> None:
-        self.db.delete(entity)
+        if hasattr(entity, 'deleted_at'):
+            entity.deleted_at = datetime.now(timezone.utc)
+            self.db.add(entity)
+        else:
+            self.db.delete(entity)
