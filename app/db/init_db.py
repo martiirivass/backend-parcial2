@@ -36,8 +36,9 @@ def init_db():
 
 
 def _run_migrations(engine):
-    """Migraciones evolutivas: agrega columnas que no existían al crear la tabla."""
+    """Migraciones evolutivas: agrega columnas / renombra según el modelo actual."""
     with engine.connect() as conn:
+        # ── Usuarios ──────────────────────────────────────────────────
         conn.execute(text("""
             ALTER TABLE usuarios
             ADD COLUMN IF NOT EXISTS tipo_documento_id INTEGER REFERENCES tipos_documento(id)
@@ -46,5 +47,46 @@ def _run_migrations(engine):
             ALTER TABLE usuarios
             ADD COLUMN IF NOT EXISTS numero_documento VARCHAR(20)
         """))
+
+        # ── Pagos ─────────────────────────────────────────────────────
+        # La tabla 'pagos' se creó originalmente con columnas viejas
+        # (referencia, created_at, updated_at). El modelo actual usa
+        # (external_reference, creado_en, actualizado_en). Corregimos.
+
+        # 1. Columnas nuevas que no existían
+        conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS mp_payment_id BIGINT"))
+        conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS mp_status VARCHAR(20)"))
+        conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(100)"))
+        conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS transaction_amount FLOAT"))
+        conn.execute(text("ALTER TABLE pagos ADD COLUMN IF NOT EXISTS date_approved TIMESTAMP"))
+
+        # 2. Renombrar columnas viejas a los nombres del modelo actual
+        #    (solo si la columna vieja existe y la nueva aún no)
+        conn.execute(text("""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name='pagos' AND column_name='referencia')
+                   AND NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name='pagos' AND column_name='external_reference') THEN
+                    ALTER TABLE pagos RENAME COLUMN referencia TO external_reference;
+                END IF;
+
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name='pagos' AND column_name='created_at')
+                   AND NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name='pagos' AND column_name='creado_en') THEN
+                    ALTER TABLE pagos RENAME COLUMN created_at TO creado_en;
+                END IF;
+
+                IF EXISTS (SELECT 1 FROM information_schema.columns
+                           WHERE table_name='pagos' AND column_name='updated_at')
+                   AND NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name='pagos' AND column_name='actualizado_en') THEN
+                    ALTER TABLE pagos RENAME COLUMN updated_at TO actualizado_en;
+                END IF;
+            END $$;
+        """))
+
         conn.commit()
         print("[init_db] Migraciones aplicadas correctamente")

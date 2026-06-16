@@ -57,9 +57,9 @@ def crear_producto(
             producto
         )
 
-        db.refresh(nuevo)
+    db.refresh(nuevo)
 
-        return nuevo
+    return nuevo
 
 
 # Listar productos
