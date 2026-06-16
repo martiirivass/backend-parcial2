@@ -6,7 +6,7 @@ from app.models.ingrediente_model import Ingrediente
 from app.repositories.categoria_repository import CategoriaRepository
 from app.repositories.producto_repository import ProductoRepository
 from app.repositories.ingrediente_repository import IngredienteRepository
-from app.unit_of_work import UnitOfWork
+from app.core.unit_of_work import UnitOfWork
 
 print("TEST: Soft Delete para TODAS las entidades\n")
 
@@ -120,7 +120,7 @@ try:
         
         if prod_en_bd:
             print(f"   [OK] SI existe en BD (fisicamente)")
-            print(f"   - activo: {prod_en_bd.activo}")
+            print(f"   - disponible: {prod_en_bd.disponible}")
             print(f"   - nombre: {prod_en_bd.nombre}\n")
         else:
             print(f"   [FAIL] NO existe en BD (fue borrada fisicamente)\n")

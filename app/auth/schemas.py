@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -5,6 +7,8 @@ class RegisterRequest(BaseModel):
     nombre: str
     email: EmailStr
     password: str
+    tipo_documento_codigo: Optional[str] = None
+    numero_documento: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -39,6 +43,8 @@ class UserResponse(BaseModel):
     id: int
     nombre: str
     email: str
+    tipo_documento_id: Optional[int] = None
+    numero_documento: Optional[str] = None
     roles: list[RolInfo] = []
 
 
