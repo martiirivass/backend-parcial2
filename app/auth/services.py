@@ -1,5 +1,7 @@
+from typing import Optional
+
 from fastapi import HTTPException
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from app.auth.security import (
     hash_password,
@@ -9,6 +11,7 @@ from app.auth.security import (
 
 from app.models.usuario import Usuario
 from app.models.usuario_rol_model import UsuarioRol
+from app.models.tipo_documento_model import TipoDocumento
 
 from app.repositories.auth_repository import AuthRepository
 
@@ -50,7 +53,9 @@ def register_user(
     nombre: str,
     email: str,
     password: str,
-    session: Session
+    session: Session,
+    tipo_documento_codigo: Optional[str] = None,
+    numero_documento: Optional[str] = None,
 ):
 
     auth_repository = AuthRepository(session)
@@ -71,11 +76,22 @@ def register_user(
             detail="Error de configuración: rol CLIENT no encontrado"
         )
 
+    # Resolver tipo de documento si se envió
+    tipo_documento_id = None
+    if tipo_documento_codigo:
+        td = session.exec(
+            select(TipoDocumento).where(TipoDocumento.codigo == tipo_documento_codigo)
+        ).first()
+        if td:
+            tipo_documento_id = td.id
+
     user = Usuario(
         nombre=nombre,
         apellido="",
         email=email,
         password_hash=hash_password(password),
+        tipo_documento_id=tipo_documento_id,
+        numero_documento=numero_documento,
     )
 
     auth_repository.add(user)

@@ -7,6 +7,8 @@ class AdminUserUpdate(SQLModel):
     nombre: Optional[str] = None
     apellido: Optional[str] = None
     email: Optional[str] = None
+    tipo_documento_id: Optional[int] = None
+    numero_documento: Optional[str] = None
     rol_ids: Optional[List[str]] = None
 
 
@@ -15,6 +17,8 @@ class AdminUserRead(SQLModel):
     nombre: str
     apellido: str
     email: str
+    tipo_documento_id: Optional[int] = None
+    numero_documento: Optional[str] = None
     deleted_at: Optional[str] = None
 
 

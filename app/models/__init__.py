@@ -14,6 +14,7 @@ from app.models.categoria_model import Categoria
 from app.models.ingrediente_model import Ingrediente
 from app.models.producto_model import Producto
 from app.models.producto_categoria_model import ProductoCategoria
+from app.models.tipo_documento_model import TipoDocumento
 from app.models.producto_ingrediente_model import ProductoIngrediente
 from app.models.pedido_model import Pedido
 from app.models.detalle_pedido_model import DetallePedido

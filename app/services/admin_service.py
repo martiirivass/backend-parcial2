@@ -8,6 +8,7 @@ from sqlmodel import Session, func, select
 from app.models.usuario import Usuario
 from app.models.usuario_rol_model import UsuarioRol
 from app.models.rol import Rol
+from app.models.tipo_documento_model import TipoDocumento
 
 logger = logging.getLogger(__name__)
 

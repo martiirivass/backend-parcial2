@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from app.models.usuario_rol_model import UsuarioRol
     from app.models.refresh_token_model import RefreshToken
     from app.models.direccion_entrega_model import DireccionEntrega
+    from app.models.tipo_documento_model import TipoDocumento
 
 
 class Usuario(SQLModel, table=True):
@@ -17,6 +18,10 @@ class Usuario(SQLModel, table=True):
     email: str = Field(max_length=254, unique=True)
     celular: Optional[str] = Field(default=None, max_length=20)
     password_hash: str = Field(max_length=60)  # bcrypt hash
+
+    # Documento
+    tipo_documento_id: Optional[int] = Field(default=None, foreign_key="tipos_documento.id")
+    numero_documento: Optional[str] = Field(default=None, max_length=20)
 
     # Soft delete
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

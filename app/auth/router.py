@@ -77,7 +77,9 @@ def register(
             nombre=data.nombre,
             email=data.email,
             password=data.password,
-            session=session
+            session=session,
+            tipo_documento_codigo=data.tipo_documento_codigo,
+            numero_documento=data.numero_documento,
         )
 
     return {
@@ -239,6 +241,8 @@ def me(
         "id": current_user.id,
         "nombre": current_user.nombre,
         "email": current_user.email,
+        "tipo_documento_id": current_user.tipo_documento_id,
+        "numero_documento": current_user.numero_documento,
         "roles": [
             {
                 "codigo": ur.rol.codigo,
