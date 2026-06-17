@@ -173,8 +173,7 @@ class PagoService:
                 external_reference=external_reference,
                 idempotency_key=idempotency_key,
                 mp_status="pending",
-                monto=pedido.total,
-                forma_pago_codigo=pedido.forma_pago_codigo,
+                transaction_amount=pedido.total,
             )
             self.repo.create(pago)
             logger.info(f"Pago creado: {pago.id}")

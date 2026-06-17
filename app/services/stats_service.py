@@ -1,4 +1,6 @@
 import logging
+from datetime import date
+from typing import Optional
 
 from app.repositories.stats_repository import (
     StatsRepository
@@ -25,9 +27,16 @@ class StatsService:
 
         self.repo = StatsRepository(db)
 
-    def get_resumen(self) -> ResumenStats:
+    def get_resumen(
+        self,
+        fecha_desde: Optional[date] = None,
+        fecha_hasta: Optional[date] = None,
+    ) -> ResumenStats:
 
-        resumen = self.repo.get_resumen_data()
+        resumen = self.repo.get_resumen_data(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+        )
 
         return ResumenStats(
             ventas_totales=resumen["ventas_totales"],
@@ -43,7 +52,9 @@ class StatsService:
         )
 
     def get_ventas_semanales(
-        self
+        self,
+        fecha_desde: Optional[date] = None,
+        fecha_hasta: Optional[date] = None,
     ) -> VentasSemanalesResponse:
 
         data = [
@@ -52,7 +63,10 @@ class StatsService:
                 total=row["total"],
                 cantidad=int(row["cantidad"]),
             )
-            for row in self.repo.get_ventas_semanales()
+            for row in self.repo.get_ventas_semanales(
+                fecha_desde=fecha_desde,
+                fecha_hasta=fecha_hasta,
+            )
         ]
 
         return VentasSemanalesResponse(
@@ -82,9 +96,16 @@ class StatsService:
             data=data
         )
 
-    def get_pedidos_por_estado(self) -> PedidosPorEstadoResponse:
+    def get_pedidos_por_estado(
+        self,
+        fecha_desde: Optional[date] = None,
+        fecha_hasta: Optional[date] = None,
+    ) -> PedidosPorEstadoResponse:
 
-        rows = self.repo.get_pedidos_por_estado()
+        rows = self.repo.get_pedidos_por_estado(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+        )
 
         data = [
             PedidosPorEstadoItem(
@@ -96,9 +117,16 @@ class StatsService:
 
         return PedidosPorEstadoResponse(data=data)
 
-    def get_ingresos_por_forma_pago(self) -> IngresosPorFormaPagoResponse:
+    def get_ingresos_por_forma_pago(
+        self,
+        fecha_desde: Optional[date] = None,
+        fecha_hasta: Optional[date] = None,
+    ) -> IngresosPorFormaPagoResponse:
 
-        rows = self.repo.get_ingresos_por_forma_pago()
+        rows = self.repo.get_ingresos_por_forma_pago(
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+        )
 
         data = [
             IngresoPorFormaPagoItem(

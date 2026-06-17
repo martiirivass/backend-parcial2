@@ -4,7 +4,7 @@ import pytest
 
 class TestResumen:
 
-    RESUMEN_URL = "/api/v1/admin/stats/resumen"
+    RESUMEN_URL = "/api/v1/estadisticas/resumen"
 
     def test_resumen_ok(self, client, admin_token):
         """GET /admin/stats/resumen con admin retorna 200."""
@@ -43,7 +43,7 @@ class TestResumen:
 
 class TestVentasSemanales:
 
-    URL = "/api/v1/admin/stats/ventas-semanales"
+    URL = "/api/v1/estadisticas/ventas-semanales"
 
     def test_ventas_semanales_ok(self, client, admin_token):
         """GET /admin/stats/ventas-semanales retorna 200."""
@@ -63,7 +63,7 @@ class TestVentasSemanales:
 
 class TestProductosMasVendidos:
 
-    URL = "/api/v1/admin/stats/productos-mas-vendidos"
+    URL = "/api/v1/estadisticas/productos-mas-vendidos"
 
     def test_productos_mas_vendidos_ok(self, client, admin_token):
         """GET /admin/stats/productos-mas-vendidos retorna 200."""
@@ -91,7 +91,7 @@ class TestProductosMasVendidos:
 
 class TestPedidosPorEstado:
 
-    URL = "/api/v1/admin/stats/pedidos-por-estado"
+    URL = "/api/v1/estadisticas/pedidos-por-estado"
 
     def test_pedidos_por_estado_ok(self, client, admin_token):
         """GET /admin/stats/pedidos-por-estado retorna 200."""
@@ -105,7 +105,7 @@ class TestPedidosPorEstado:
 
 class TestIngresosPorFormaPago:
 
-    URL = "/api/v1/admin/stats/ingresos-por-forma-pago"
+    URL = "/api/v1/estadisticas/ingresos-por-forma-pago"
 
     def test_ingresos_por_forma_pago_ok(self, client, admin_token):
         """GET /admin/stats/ingresos-por-forma-pago retorna 200."""

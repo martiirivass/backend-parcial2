@@ -108,6 +108,17 @@ def _run_migrations(engine):
         """))
 
         # ── Remover EN_CAMINO de estados_pedido (spec v7) ────────────
+        # Primero limpiamos referencias FK en historial
+        conn.execute(text("""
+            UPDATE historial_estados_pedido
+            SET estado_desde = NULL
+            WHERE estado_desde = 'EN_CAMINO'
+        """))
+        conn.execute(text("""
+            UPDATE historial_estados_pedido
+            SET estado_hacia = 'ENTREGADO'
+            WHERE estado_hacia = 'EN_CAMINO'
+        """))
         conn.execute(text("""
             DELETE FROM estados_pedido
             WHERE codigo = 'EN_CAMINO'

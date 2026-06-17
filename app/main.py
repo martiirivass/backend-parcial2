@@ -13,7 +13,7 @@ from app.routers.ingrediente_router import router as ingrediente
 from app.routers.pedido_router import router as pedido
 from app.routers.direccion_router import router as direccion
 from app.routers.admin_router import router as admin
-from app.routers.stats_router import router as stats
+from app.routers.stats_router import router as stats, router_estadisticas
 from app.routers.unidad_medida_router import router as unidad_medida
 from app.routers.forma_pago_router import router as forma_pago
 from app.routers.estado_pedido_router import router as estado_pedido
@@ -25,7 +25,7 @@ from fastapi.exceptions import HTTPException as FastAPIHTTPException
 from app.core.errors import rfc7807_exception_handler
 from app.pagos.router import router as pagos
 from app.services.cloudinary_service import CloudinaryService
-from app.modules.uploads.router import router as uploads
+from app.routers.uploads_router import router as uploads
 
 
 from sqlmodel import Session
@@ -94,6 +94,8 @@ app.include_router(admin, prefix="/api/v1")
 print("[OK] Admin router incluido")
 app.include_router(stats, prefix="/api/v1")
 print("[OK] Stats router incluido")
+app.include_router(router_estadisticas, prefix="/api/v1")
+print("[OK] Estadisticas router incluido")
 app.include_router(unidad_medida, prefix="/api/v1")
 print("[OK] UnidadMedida router incluido")
 app.include_router(forma_pago, prefix="/api/v1")

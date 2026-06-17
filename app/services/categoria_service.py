@@ -1,5 +1,4 @@
 import logging
-import math
 
 from fastapi import UploadFile
 
@@ -45,26 +44,22 @@ class CategoriaService:
     # Listar categorías
     def listar_categorias(
         self,
-        page: int = 1,
-        size: int = 20,
+        limit: int = 10,
+        offset: int = 0,
         parent_id=None
     ):
-
-        skip = (page - 1) * size
 
         categorias = self.repo.get_all(
             parent_id=parent_id
         )
 
         total = len(categorias)
-        pages = math.ceil(total / size) if size > 0 else 0
 
         return {
-            "items": categorias[skip: skip + size],
+            "data": categorias[offset: offset + limit],
             "total": total,
-            "page": page,
-            "size": size,
-            "pages": pages,
+            "limit": limit,
+            "offset": offset,
         }
 
     # Árbol recursivo

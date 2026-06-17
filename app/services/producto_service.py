@@ -139,7 +139,7 @@ class ProductoService:
         pages = math.ceil(total / size) if size > 0 else 0
 
         return {
-            "items": data,
+            "data": data,
             "total": total,
             "page": page,
             "size": size,

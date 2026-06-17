@@ -44,7 +44,9 @@ class Producto(SQLModel, table=True):
 
     @property
     def imagen_url(self) -> Optional[str]:
-        return self.imagenes_url
+        if self.imagenes_url and len(self.imagenes_url) > 0:
+            return self.imagenes_url[0]
+        return None
 
     # Relacion N:N con categorias
     categorias: List["Categoria"] = Relationship(

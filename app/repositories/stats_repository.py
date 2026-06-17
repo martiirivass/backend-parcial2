@@ -116,23 +116,25 @@ class StatsRepository:
 
         pedidos_pagados = self._pedidos_pagados_subquery()
 
+        fecha_trunc = func.date_trunc(trunc, Pedido.created_at)
+
         ventas_db = self.db.exec(
             select(
-                func.date_trunc(trunc, Pedido.created_at).label("fecha"),
+                fecha_trunc.label("fecha"),
                 func.coalesce(func.sum(Pedido.total), 0).label("total"),
                 func.count(Pedido.id).label("cantidad"),
             ).where(
                 Pedido.id.in_(select(pedidos_pagados.c.id)),
                 Pedido.created_at.between(inicio_periodo, fin_periodo),
             ).group_by(
-                func.date_trunc(trunc, Pedido.created_at)
+                fecha_trunc
             ).order_by(
-                func.date_trunc(trunc, Pedido.created_at)
+                fecha_trunc
             )
         ).all()
 
         ventas_dict = {
-            row.fecha: row
+            row.fecha.date(): row
             for row in ventas_db
         }
 

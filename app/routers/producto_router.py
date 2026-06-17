@@ -89,9 +89,12 @@ def listar(
 
     service = ProductoService(db)
 
+    page = (offset // limit) + 1 if limit > 0 else 1
+    size = limit
+
     return service.listar_productos(
-        limit=limit,
-        offset=offset,
+        page=page,
+        size=size,
         categoria_id=categoria_id,
         disponible=disponible,
         q=q

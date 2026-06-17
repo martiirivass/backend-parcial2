@@ -65,9 +65,7 @@ def login_user(
         "sub": str(user.id)
     })
 
-    refresh_token_str = _create_refresh_token(session, user.id)
-
-    return token, refresh_token_str
+    return token
 
 
 def register_user(
