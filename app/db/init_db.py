@@ -145,15 +145,16 @@ def _run_migrations(engine):
             ALTER TABLE pagos
             ALTER COLUMN transaction_amount TYPE NUMERIC(10,2) USING transaction_amount::numeric(10,2)
         """))
-        conn.execute(text("""
-            ALTER TABLE pagos
-            ALTER COLUMN monto TYPE NUMERIC(10,2) USING monto::numeric(10,2)
-        """))
-
         # ── Ingredientes: stock_cantidad ───────────────────────────────
         conn.execute(text("""
             ALTER TABLE ingredientes
             ADD COLUMN IF NOT EXISTS stock_cantidad INTEGER NOT NULL DEFAULT 0
+        """))
+
+        # ── ProductoIngrediente: server_default para cantidad ──────────
+        conn.execute(text("""
+            ALTER TABLE producto_ingrediente
+            ALTER COLUMN cantidad SET DEFAULT 1.0
         """))
 
         # ── Pagos: idempotency_key UNIQUE ────────────────────────────

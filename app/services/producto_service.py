@@ -1,10 +1,14 @@
 import logging
-
 import math
+import uuid
+
+from pathlib import Path
 
 from fastapi import UploadFile
 
 from app.core.errors import http_error as http_error
+
+from app.core.config import cloudinary_configurado
 
 from app.models.producto_model import Producto
 
@@ -24,8 +28,13 @@ from app.schemas.producto_schema import (
     ProductoReadWithRelations
 )
 
+from app.core.config import UPLOADS_DIR
 from app.services.imagen_service import (
     ImagenService
+)
+
+from app.services.cloudinary_service import (
+    CloudinaryService
 )
 
 logger = logging.getLogger(__name__)
@@ -254,6 +263,15 @@ class ProductoService:
                 404, "Producto no encontrado", "PRODUCT_NOT_FOUND"
             )
 
+        # Delete image from Cloudinary if present
+        if producto.imagen_public_id and cloudinary_configurado():
+            try:
+                CloudinaryService.eliminar(producto.imagen_public_id)
+            except Exception as e:
+                logger.warning(
+                    f"Error al eliminar imagen de Cloudinary: {e}"
+                )
+
         self.repo.delete(producto)
 
     # Actualizar lista de imágenes
@@ -272,8 +290,12 @@ class ProductoService:
 
         producto.imagenes_url = imagenes_url
         self.repo.update(producto)
-        return producto
 
+        # ── debug
+        logger.info(f"subir_imagen: setting imagenes_url={producto.imagenes_url}")
+        # ──
+
+        return producto
     # Subir imagen
     def subir_imagen(
         self,
@@ -290,12 +312,37 @@ class ProductoService:
                 404, "Producto no encontrado", "PRODUCT_NOT_FOUND"
             )
 
-        imagen_url = ImagenService.guardar(
-            producto_id,
-            archivo
-        )
+        logger.info(f"subir_imagen called: producto_id={producto_id}, filename={repr(archivo.filename)}, content_type={repr(archivo.content_type)}")
 
-        producto.imagenes_url = [imagen_url]
+        # Read file content
+        contenido = archivo.file.read()
+        logger.info(f"File read: {len(contenido)} bytes")
+
+        # Validate
+        content_type = archivo.content_type or "application/octet-stream"
+        CloudinaryService.validar_imagen(contenido, content_type)
+
+        # Generate public_id
+        ext = Path(archivo.filename).suffix if archivo.filename else ".jpg"
+        public_id = f"{uuid.uuid4().hex}{ext}"
+
+        if cloudinary_configurado():
+            # Cloudinary path — captures public_id for future cleanup
+            resultado = CloudinaryService.subir(
+                contenido,
+                public_id=public_id,
+                folder="foodstore/productos"
+            )
+            producto.imagenes_url = [resultado["secure_url"]]
+            producto.imagen_public_id = resultado["public_id"]
+        else:
+            # Local fallback — save directly (bytes already read)
+            nombre_archivo = f"{producto_id}_{uuid.uuid4().hex}{ext}"
+            UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+            ruta = UPLOADS_DIR / nombre_archivo
+            with open(ruta, "wb") as f:
+                f.write(contenido)
+            producto.imagenes_url = [f"http://localhost:8000/uploads/{nombre_archivo}"]
 
         self.repo.update(producto)
 

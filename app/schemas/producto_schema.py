@@ -64,6 +64,7 @@ class ProductoRead(ProductoBase):
     id: int
     precio: Decimal  # alias via @property del modelo
     imagen_url: Optional[str] = None  # alias via @property del modelo
+    imagen_public_id: Optional[str] = None
 
 
 class ProductoReadWithRelations(ProductoRead):

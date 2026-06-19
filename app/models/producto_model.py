@@ -26,6 +26,7 @@ class Producto(SQLModel, table=True):
         default=None,
         sa_column=Column(ARRAY(Text))
     )
+    imagen_public_id: Optional[str] = Field(default=None)
     stock_cantidad: int = Field(
         default=0,
         sa_column=Column(Integer, CheckConstraint("stock_cantidad >= 0"))

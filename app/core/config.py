@@ -4,7 +4,7 @@ from decimal import Decimal
 from pydantic_settings import BaseSettings
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent  # → raíz del proyecto
 
 UPLOADS_DIR = BASE_DIR / "uploads"
 
