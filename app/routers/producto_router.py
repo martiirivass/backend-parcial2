@@ -370,16 +370,29 @@ async def crear_producto_con_imagen(
         service = ProductoService(db)
         nuevo = service.crear_producto(producto_data)
 
+        # ── DEBUG ──
+        logger.info(f"=== DEBUG crear_producto_con_imagen ===")
+        logger.info(f"imagen is None? {imagen is None}")
+        if imagen:
+            logger.info(f"imagen.filename={repr(imagen.filename)}")
+            logger.info(f"imagen.content_type={repr(imagen.content_type)}")
+        logger.info(f"Cloudinary configurado: {cloudinary_configurado()}")
+        # ── END DEBUG ──
+
         if imagen and imagen.filename:
             try:
                 nuevo = service.subir_imagen(nuevo.id, imagen)
+                logger.info(f"subir_imagen OK: imagenes_url={nuevo.imagenes_url}, imagen_url={nuevo.imagen_url}")
             except Exception as e:
                 logger.warning(
                     f"Error al subir imagen para producto "
                     f"{nuevo.id}: {e}"
                 )
+        else:
+            logger.info(f"subir_imagen NOT called: imagen={imagen is not None}, filename={imagen.filename if imagen else 'N/A'}")
 
     db.refresh(nuevo)
+    logger.info(f"Final: imagen_url={nuevo.imagen_url}, imagenes_url={nuevo.imagenes_url}")
     return nuevo
 
 
@@ -418,18 +431,6 @@ async def actualizar_producto_con_imagen(
     - Si `eliminar_imagen=true` y NO se envía imagen,
       se elimina la imagen actual
     """
-    # ── DEBUG LOGGING ──
-    logger.info("=== DEBUG actualizar_producto_con_imagen ===")
-    logger.info(f"producto_id={producto_id}")
-    logger.info(f"imagen is None? {imagen is None}")
-    if imagen:
-        logger.info(f"imagen.filename={repr(imagen.filename)}")
-        logger.info(f"imagen.content_type={repr(imagen.content_type)}")
-    logger.info(f"eliminar_imagen={eliminar_imagen}")
-    logger.info(f"update_dict keys: {list(update_dict.keys())}")
-    logger.info(f"Cloudinary configurado: {cloudinary_configurado()}")
-    # ── END DEBUG ──
-
     # Build update dict from form fields
     update_dict = {}
     if nombre is not None:
@@ -448,6 +449,19 @@ async def actualizar_producto_con_imagen(
         update_dict["ingrediente_ids"] = json.loads(ingrediente_ids)
 
     producto_data = ProductoUpdate(**update_dict)
+
+    # ── DEBUG LOGGING ──
+    logger.info("=== DEBUG actualizar_producto_con_imagen ===")
+    logger.info(f"producto_id={producto_id}")
+    logger.info(f"imagen is None? {imagen is None}")
+    if imagen:
+        logger.info(f"imagen.filename={repr(imagen.filename)}")
+        logger.info(f"imagen.content_type={repr(imagen.content_type)}")
+    logger.info(f"eliminar_imagen={eliminar_imagen}")
+    logger.info(f"update_dict keys: {list(update_dict.keys())}")
+    logger.info(f"Cloudinary configurado: {cloudinary_configurado()}")
+    logger.info(f"ProductoUpdate fields: {update_dict}")
+    # ── END DEBUG ──
 
     with UnitOfWork(db):
         service = ProductoService(db)
