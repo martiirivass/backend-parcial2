@@ -82,4 +82,4 @@ class UserResponse(BaseModel):
 
 
 class MeResponse(UserResponse):
-    pass
+    access_token: str | None = None

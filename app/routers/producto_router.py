@@ -370,29 +370,11 @@ async def crear_producto_con_imagen(
         service = ProductoService(db)
         nuevo = service.crear_producto(producto_data)
 
-        # ── DEBUG ──
-        logger.info(f"=== DEBUG crear_producto_con_imagen ===")
-        logger.info(f"imagen is None? {imagen is None}")
-        if imagen:
-            logger.info(f"imagen.filename={repr(imagen.filename)}")
-            logger.info(f"imagen.content_type={repr(imagen.content_type)}")
-        logger.info(f"Cloudinary configurado: {cloudinary_configurado()}")
-        # ── END DEBUG ──
-
         if imagen and imagen.filename:
-            try:
-                nuevo = service.subir_imagen(nuevo.id, imagen)
-                logger.info(f"subir_imagen OK: imagenes_url={nuevo.imagenes_url}, imagen_url={nuevo.imagen_url}")
-            except Exception as e:
-                logger.warning(
-                    f"Error al subir imagen para producto "
-                    f"{nuevo.id}: {e}"
-                )
-        else:
-            logger.info(f"subir_imagen NOT called: imagen={imagen is not None}, filename={imagen.filename if imagen else 'N/A'}")
+            db.flush()
+            nuevo = service.subir_imagen(nuevo.id, imagen)
 
     db.refresh(nuevo)
-    logger.info(f"Final: imagen_url={nuevo.imagen_url}, imagenes_url={nuevo.imagenes_url}")
     return nuevo
 
 

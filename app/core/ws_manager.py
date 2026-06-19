@@ -65,7 +65,6 @@ class WSManager:
 
     async def connect_admin(self, websocket: WebSocket) -> None:
         """Registra un admin para recibir eventos de TODOS los pedidos."""
-        await websocket.accept()
         async with self._lock:
             self._admin_connections.add(websocket)
         logger.info(
@@ -88,7 +87,6 @@ class WSManager:
         self, pedido_id: int, websocket: WebSocket
     ) -> None:
         """Registra un cliente para recibir eventos de UN pedido específico."""
-        await websocket.accept()
         async with self._lock:
             if pedido_id not in self._client_connections:
                 self._client_connections[pedido_id] = set()

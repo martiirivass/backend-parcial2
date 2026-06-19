@@ -4,7 +4,7 @@ import uuid
 
 from pathlib import Path
 
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 
 from app.core.errors import http_error as http_error
 

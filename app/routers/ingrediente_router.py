@@ -115,9 +115,7 @@ def actualizar(
             datos
         )
 
-        db.refresh(ingrediente)
-
-        return ingrediente
+    return ingrediente
 
 
 # Eliminar ingrediente

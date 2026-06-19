@@ -1,8 +1,6 @@
 import logging
 
-from fastapi import UploadFile
-
-from app.core.errors import http_error
+from fastapi import HTTPException, UploadFile
 
 from app.models.categoria_model import Categoria
 

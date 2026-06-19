@@ -89,9 +89,9 @@ def crear(
             datos
         )
 
-        db.refresh(unidad)
+    db.refresh(unidad)
 
-        return unidad
+    return unidad
 
 
 # Actualizar
@@ -120,9 +120,7 @@ def actualizar(
             datos
         )
 
-        db.refresh(unidad)
-
-        return unidad
+    return unidad
 
 
 # Eliminar

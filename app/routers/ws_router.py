@@ -33,7 +33,7 @@ def _get_user_from_ws(websocket: WebSocket) -> Usuario | None:
     Extrae y valida el token JWT desde cookies o query param ?token=<jwt>.
     Retorna el usuario o None si no es válido.
     """
-    token = websocket.cookies.get("access_token") or websocket.query_params.get("token")
+    token = websocket.query_params.get("token") or websocket.cookies.get("access_token")
     if not token:
         return None
 
@@ -81,7 +81,11 @@ async def ws_pedidos_admin(websocket: WebSocket) -> None:
 
     Autenticación: requiere cookie `access_token` con rol ADMIN o PEDIDOS.
     """
+    user: Usuario | None = None
     try:
+        # ── Aceptar conexión primero (Starlette requiere accept antes de close) ──
+        await websocket.accept()
+
         # ── Auth (cookie o query param ?token=) ────────────────────────
         user = _get_user_from_ws(websocket)
         if user is None:
@@ -117,7 +121,11 @@ async def ws_pedidos_cliente(
     Autenticación: requiere cookie `access_token`.
     El pedido debe pertenecer al usuario autenticado.
     """
+    user: Usuario | None = None
     try:
+        # ── Aceptar conexión primero (Starlette requiere accept antes de close) ──
+        await websocket.accept()
+
         # ── Auth (cookie o query param ?token=) ────────────────────────
         user = _get_user_from_ws(websocket)
         if user is None:

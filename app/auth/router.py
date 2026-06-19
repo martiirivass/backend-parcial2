@@ -247,6 +247,7 @@ def refresh(
     summary="Obtener usuario autenticado"
 )
 def me(
+    request: Request,
     current_user: Usuario = Depends(get_current_user)
 ):
 
@@ -264,7 +265,8 @@ def me(
                 "nombre": ur.rol.nombre
             }
             for ur in current_user.usuario_roles
-        ]
+        ],
+        "access_token": request.cookies.get("access_token")
     }
 
 
