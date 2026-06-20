@@ -84,7 +84,9 @@ def actualizar(
             datos
         )
 
-        db.refresh(direccion)
+        # No usar db.refresh() — SQLModel hace expire_state ANTES de autoflush,
+        # lo que elimina el dirty tracking y el UPDATE nunca se envía a la DB.
+        # UnitOfWork.commit() persiste los cambios correctamente.
 
         return direccion
 
@@ -104,8 +106,6 @@ def marcar_principal(
             direccion_id,
             current_user.id
         )
-
-        db.refresh(direccion)
 
         return direccion
 

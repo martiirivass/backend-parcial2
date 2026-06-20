@@ -191,18 +191,9 @@ class CategoriaService:
                 detail="Categoria no encontrada"
             )
 
-        productos_asociados = (
-            self.repo.tiene_productos_asociados(
-                categoria_id
-            )
+        self.repo.eliminar_asociaciones_productos(
+            categoria_id
         )
-
-        if productos_asociados:
-
-            raise HTTPException(
-                status_code=409,
-                detail="No se puede eliminar la categoria porque tiene productos asociados"
-            )
 
         self.repo.delete(
             categoria

@@ -34,7 +34,7 @@ def crear(
     ingrediente: IngredienteCreate,
     db: Session = Depends(get_session),
     current_user=Depends(
-        require_roles("ADMIN", "STOCK")
+        require_roles("ADMIN")
     )
 ):
 
@@ -102,7 +102,7 @@ def actualizar(
     datos: IngredienteUpdate,
     db: Session = Depends(get_session),
     current_user=Depends(
-        require_roles("ADMIN", "STOCK")
+        require_roles("ADMIN")
     )
 ):
 
