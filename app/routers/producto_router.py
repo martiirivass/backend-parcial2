@@ -154,8 +154,6 @@ def actualizar_disponibilidad(
             datos
         )
 
-        db.refresh(producto)
-
         return producto
 
 
@@ -182,8 +180,6 @@ def actualizar_imagenes(
             datos.imagenes_url
         )
 
-        db.refresh(producto)
-
         return producto
 
 
@@ -209,8 +205,6 @@ def actualizar(
             producto_id,
             datos
         )
-
-        db.refresh(producto)
 
         return producto
 
@@ -259,9 +253,6 @@ def subir_imagen(
             producto_id,
             archivo
         )
-
-        db.flush()
-        db.refresh(producto)
 
         return producto
 

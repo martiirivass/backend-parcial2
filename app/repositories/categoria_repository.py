@@ -62,6 +62,21 @@ class CategoriaRepository(
             )
         ).first()
 
+    def eliminar_asociaciones_productos(
+        self,
+        categoria_id: int
+    ):
+
+        asociaciones = self.db.exec(
+            select(ProductoCategoria).where(
+                ProductoCategoria.categoria_id == categoria_id
+            )
+        ).all()
+
+        for a in asociaciones:
+
+            self.db.delete(a)
+
     def delete(
         self,
         categoria: Categoria

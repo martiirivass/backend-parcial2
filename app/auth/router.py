@@ -70,7 +70,7 @@ router = APIRouter(
     status_code=201,
     summary="Registrar usuario cliente"
 )
-@limiter.limit("5/15minutes")
+@limiter.limit("30/minute")
 def register(
     request: Request,
     data: RegisterRequest,
@@ -103,7 +103,7 @@ def register(
     status_code=200,
     summary="Iniciar sesión"
 )
-@limiter.limit("5/15minutes")
+@limiter.limit("30/minute")
 def login(
     request: Request,
     data: LoginRequest,

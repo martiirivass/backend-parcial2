@@ -16,6 +16,10 @@ from app.models.producto_categoria_model import (
     ProductoCategoria
 )
 
+from app.models.categoria_model import (
+    Categoria
+)
+
 from app.repositories.base import (
     BaseRepository
 )
@@ -81,18 +85,31 @@ class ProductoRepository(
                 Producto.disponible == disponible
             )
 
-        # Búsqueda
+        # Búsqueda (nombre del producto, descripción o nombre de la categoría)
         if q and q.strip():
+
+            categorias_subq = (
+                select(ProductoCategoria.producto_id)
+                .join(
+                    Categoria,
+                    ProductoCategoria.categoria_id == Categoria.id
+                )
+                .where(
+                    Categoria.nombre.ilike(f"%{q}%")
+                )
+            )
 
             statement = statement.where(
                 or_(
                     Producto.nombre.ilike(f"%{q}%"),
-                    Producto.descripcion.ilike(f"%{q}%")
+                    Producto.descripcion.ilike(f"%{q}%"),
+                    Producto.id.in_(categorias_subq)
                 )
             )
 
         statement = (
             statement
+            .distinct()
             .offset(offset)
             .limit(limit)
         )
@@ -107,7 +124,7 @@ class ProductoRepository(
     ):
 
         statement = (
-            select(func.count())
+            select(func.count(func.distinct(Producto.id)))
             .select_from(Producto)
             .where(
                 Producto.deleted_at.is_(None)
@@ -136,10 +153,22 @@ class ProductoRepository(
 
         if q and q.strip():
 
+            categorias_subq = (
+                select(ProductoCategoria.producto_id)
+                .join(
+                    Categoria,
+                    ProductoCategoria.categoria_id == Categoria.id
+                )
+                .where(
+                    Categoria.nombre.ilike(f"%{q}%")
+                )
+            )
+
             statement = statement.where(
                 or_(
                     Producto.nombre.ilike(f"%{q}%"),
-                    Producto.descripcion.ilike(f"%{q}%")
+                    Producto.descripcion.ilike(f"%{q}%"),
+                    Producto.id.in_(categorias_subq)
                 )
             )
 

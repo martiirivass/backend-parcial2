@@ -34,6 +34,7 @@ def run_seed():
         seed_estados_pedido(session)
         seed_formas_pago(session)
         seed_admin(session)
+        seed_gestores(session)
         seed_categorias_ingredientes(session)
         seed_productos_ejemplo(session)
         session.commit()
@@ -194,6 +195,51 @@ def seed_admin(session):
         print("  Usuario admin creado: admin@foodstore.com / Admin1234!")
     else:
         print("  Usuario admin ya existe")
+
+
+def seed_gestores(session):
+    rol_stock = session.exec(
+        select(Rol).where(Rol.codigo == "STOCK")
+    ).first()
+    rol_pedidos = session.exec(
+        select(Rol).where(Rol.codigo == "PEDIDOS")
+    ).first()
+
+    stock_user = session.exec(
+        select(Usuario).where(Usuario.email == "stock@foodstore.com")
+    ).first()
+    if not stock_user and rol_stock:
+        stock_user = Usuario(
+            nombre="Stock",
+            apellido="Manager",
+            email="stock@foodstore.com",
+            password_hash=hash_password("Stock1234!"),
+        )
+        session.add(stock_user)
+        session.flush()
+        ur = UsuarioRol(usuario_id=stock_user.id, rol_codigo=rol_stock.codigo)
+        session.add(ur)
+        print("  Usuario stock creado: stock@foodstore.com / Stock1234!")
+    else:
+        print("  Usuario stock ya existe (o no hay rol STOCK)")
+
+    pedidos_user = session.exec(
+        select(Usuario).where(Usuario.email == "pedidos@foodstore.com")
+    ).first()
+    if not pedidos_user and rol_pedidos:
+        pedidos_user = Usuario(
+            nombre="Pedidos",
+            apellido="Manager",
+            email="pedidos@foodstore.com",
+            password_hash=hash_password("Pedidos1234!"),
+        )
+        session.add(pedidos_user)
+        session.flush()
+        ur = UsuarioRol(usuario_id=pedidos_user.id, rol_codigo=rol_pedidos.codigo)
+        session.add(ur)
+        print("  Usuario pedidos creado: pedidos@foodstore.com / Pedidos1234!")
+    else:
+        print("  Usuario pedidos ya existe (o no hay rol PEDIDOS)")
 
 
 def seed_categorias_ingredientes(session):
