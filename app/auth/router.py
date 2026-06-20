@@ -19,7 +19,6 @@ from app.auth.schemas import (
     RegisterRequest,
     RegisterResponse,
     TokenResponse,
-    RefreshResponse,
     MeResponse
 )
 
@@ -166,7 +165,7 @@ def login(
 
 @router.post(
     "/refresh",
-    response_model=RefreshResponse,
+    response_model=TokenResponse,
     status_code=200,
     summary="Renovar access token"
 )
@@ -237,7 +236,10 @@ def refresh(
     )
 
     return {
-        "message": "Token renovado exitosamente"
+        "access_token": new_token,
+        "refresh_token": new_raw,
+        "token_type": "bearer",
+        "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60
     }
 
 

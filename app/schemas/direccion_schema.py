@@ -5,6 +5,7 @@ from pydantic import field_validator
 
 
 class DireccionEntregaCreate(SQLModel):
+    """Esquema para crear una nueva dirección de entrega."""
     alias: Optional[str] = None
     linea1: str
     linea2: Optional[str] = None
@@ -21,6 +22,7 @@ class DireccionEntregaCreate(SQLModel):
 
 
 class DireccionEntregaUpdate(SQLModel):
+    """Esquema para actualizar una dirección de entrega existente."""
     alias: Optional[str] = None
     linea1: Optional[str] = None
     linea2: Optional[str] = None
@@ -31,6 +33,7 @@ class DireccionEntregaUpdate(SQLModel):
 
 
 class DireccionEntregaRead(SQLModel):
+    """Modelo de lectura para una dirección de entrega con marcas de tiempo."""
     id: int
     usuario_id: int
     alias: Optional[str] = None

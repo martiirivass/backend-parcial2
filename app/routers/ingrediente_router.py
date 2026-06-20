@@ -37,7 +37,7 @@ def crear(
         require_roles("ADMIN")
     )
 ):
-
+    """Crea un nuevo ingrediente."""
     with UnitOfWork(db):
 
         service = IngredienteService(db)
@@ -65,7 +65,7 @@ def listar(
     ),
     db: Session = Depends(get_session)
 ):
-
+    """Lista los ingredientes con búsqueda opcional y paginación."""
     service = IngredienteService(db)
 
     return service.listar_ingredientes(
@@ -84,7 +84,7 @@ def obtener(
     ingrediente_id: int,
     db: Session = Depends(get_session)
 ):
-
+    """Obtiene un ingrediente por su ID."""
     service = IngredienteService(db)
 
     return service.obtener_ingrediente(
@@ -105,7 +105,7 @@ def actualizar(
         require_roles("ADMIN")
     )
 ):
-
+    """Actualiza un ingrediente existente."""
     with UnitOfWork(db):
 
         service = IngredienteService(db)
@@ -130,7 +130,7 @@ def eliminar(
         require_roles("ADMIN")
     )
 ):
-
+    """Elimina un ingrediente."""
     with UnitOfWork(db):
 
         service = IngredienteService(db)

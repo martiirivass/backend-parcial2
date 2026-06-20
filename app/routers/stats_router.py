@@ -28,7 +28,7 @@ router_estadisticas = APIRouter(
 
 # Helper para registrar misma vista en ambos routers
 def _dual_register(path: str, **kwargs):
-    """Decora una view function en ambos routers."""
+    """Decora una función vista en ambos routers."""
     def decorator(func):
         router.add_api_route(path, func, **kwargs)
         router_estadisticas.add_api_route(path, func, **kwargs)

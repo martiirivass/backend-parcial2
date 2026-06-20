@@ -8,6 +8,7 @@ if TYPE_CHECKING:
 
 
 class CategoriaBase(SQLModel):
+    """Esquema base con campos comunes de categoría."""
     nombre: str
     descripcion: Optional[str] = None
 
@@ -20,25 +21,30 @@ class CategoriaBase(SQLModel):
 
 #Para crear categorias, reutiliza categoriaBase
 class CategoriaCreate(CategoriaBase):
+    """Esquema para crear una nueva categoría."""
     parent_id: Optional[int] = None
 
 #Para actualizar categorias, todos los campos son opcionales
 class CategoriaUpdate(SQLModel):
+    """Esquema para actualizar una categoría existente (todos los campos opcionales)."""
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     parent_id: Optional[int] = None
 
 #Para leer categorias, incluye el id
 class CategoriaRead(CategoriaBase):
+    """Modelo de lectura para una categoría, incluye id y url de imagen."""
     id: int
     parent_id: Optional[int] = None
     imagen_url: Optional[str] = None
 
 #Para leer categorias con sus productos relacionados
 class CategoriaReadWithProductos(CategoriaRead):
+    """Categoría con sus productos relacionados incluidos."""
     productos: List["ProductoRead"] = []
 
 #Para el arbol de categorias (consulta recursiva)
 class CategoriaTree(CategoriaRead):
+    """Árbol jerárquico de categorías con subcategorías anidadas."""
     subcategorias: List["CategoriaTree"] = []
     

@@ -41,7 +41,7 @@ router = APIRouter(
 def listar(
     db: Session = Depends(get_session)
 ):
-
+    """Lista todas las unidades de medida."""
     service = UnidadMedidaService(db)
 
     return service.listar()
@@ -56,7 +56,7 @@ def obtener(
     unidad_id: int,
     db: Session = Depends(get_session)
 ):
-
+    """Obtiene una unidad de medida por su ID."""
     service = UnidadMedidaService(db)
 
     return service.obtener(
@@ -80,7 +80,7 @@ def crear(
         )
     )
 ):
-
+    """Crea una nueva unidad de medida."""
     with UnitOfWork(db):
 
         service = UnidadMedidaService(db)
@@ -110,7 +110,7 @@ def actualizar(
         )
     )
 ):
-
+    """Actualiza una unidad de medida existente."""
     with UnitOfWork(db):
 
         service = UnidadMedidaService(db)
@@ -135,7 +135,7 @@ def eliminar(
         require_roles("ADMIN")
     )
 ):
-
+    """Elimina una unidad de medida."""
     with UnitOfWork(db):
 
         service = UnidadMedidaService(db)

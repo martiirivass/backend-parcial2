@@ -25,7 +25,7 @@ def crear(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-
+    """Crea una nueva dirección de entrega para el usuario actual."""
     with UnitOfWork(db):
 
         service = DireccionEntregaService(db)
@@ -45,7 +45,7 @@ def listar(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-
+    """Lista todas las direcciones de entrega del usuario actual."""
     service = DireccionEntregaService(db)
 
     return service.listar_direcciones(current_user.id)
@@ -57,7 +57,7 @@ def obtener(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-
+    """Obtiene una dirección de entrega por su ID."""
     service = DireccionEntregaService(db)
 
     return service.obtener_direccion(
@@ -73,7 +73,7 @@ def actualizar(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-
+    """Actualiza una dirección de entrega existente."""
     with UnitOfWork(db):
 
         service = DireccionEntregaService(db)
@@ -97,7 +97,7 @@ def marcar_principal(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-
+    """Marca una dirección de entrega como principal del usuario."""
     with UnitOfWork(db):
 
         service = DireccionEntregaService(db)
@@ -116,7 +116,7 @@ def eliminar(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(get_current_user)
 ):
-
+    """Elimina una dirección de entrega."""
     with UnitOfWork(db):
 
         service = DireccionEntregaService(db)

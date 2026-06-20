@@ -19,12 +19,11 @@ class IngredienteService:
 
         self.repo = IngredienteRepository(db)
 
-    # Crear ingrediente
     def crear_ingrediente(
         self,
         ingrediente_data
     ):
-
+        """Crea un nuevo ingrediente."""
         nuevo = Ingrediente(
             **ingrediente_data.model_dump()
         )
@@ -35,14 +34,13 @@ class IngredienteService:
 
         return nuevo
 
-    # Listar ingredientes
     def listar_ingredientes(
         self,
         limit: int,
         offset: int,
         q: str | None = None
     ):
-
+        """Lista los ingredientes con búsqueda opcional y paginación."""
         ingredientes = self.repo.get_all(
             limit=limit,
             offset=offset
@@ -63,12 +61,11 @@ class IngredienteService:
             size=limit,
         )
 
-    # Obtener ingrediente
     def obtener_ingrediente(
         self,
         ingrediente_id: int
     ):
-
+        """Obtiene un ingrediente por su ID."""
         ingrediente = self.repo.get_by_id(
             ingrediente_id
         )
@@ -82,13 +79,12 @@ class IngredienteService:
 
         return ingrediente
 
-    # Actualizar ingrediente
     def actualizar_ingrediente(
         self,
         ingrediente_id: int,
         datos
     ):
-
+        """Actualiza un ingrediente existente."""
         ingrediente = self.repo.get_by_id(
             ingrediente_id
         )
@@ -118,12 +114,11 @@ class IngredienteService:
 
         return ingrediente
 
-    # Eliminar ingrediente
     def eliminar_ingrediente(
         self,
         ingrediente_id: int
     ):
-
+        """Elimina un ingrediente por su ID."""
         ingrediente = self.repo.get_by_id(
             ingrediente_id
         )

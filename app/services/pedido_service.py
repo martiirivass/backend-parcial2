@@ -59,6 +59,7 @@ class PedidoService:
         usuario_id: int,
         motivo: str | None = None,
     ) -> None:
+        """Encola un evento WebSocket para emitir después del commit."""
         self._pending_events.append({
             "pedido_id": pedido_id,
             "estado_anterior": estado_anterior,
@@ -68,6 +69,7 @@ class PedidoService:
         })
 
     def flush_events(self) -> None:
+        """Emite todos los eventos WebSocket pendientes y luego limpia la cola."""
         if not self.ws_manager:
             self._pending_events.clear()
             return
@@ -91,7 +93,7 @@ class PedidoService:
             )
 
     def _get_estado_by_codigo(self, codigo):
-
+        """Obtiene un estado de pedido por código, lanzando 404 si no existe."""
         estado = self.estado_repo.get_by_codigo(codigo)
 
         if not estado:
@@ -110,7 +112,7 @@ class PedidoService:
         usuario_id,
         motivo=None
     ):
-
+        """Crea una entrada en el historial de estados."""
         historial = HistorialEstadoPedido(
             pedido_id=pedido_id,
             estado_desde=estado_desde,
@@ -124,7 +126,7 @@ class PedidoService:
         return historial
 
     def crear_pedido(self, usuario_id, datos):
-
+        """Crea un nuevo pedido con ítems, calcula totales y asigna el estado inicial."""
         subtotal = Decimal('0.00')
 
         detalles = []
@@ -233,6 +235,7 @@ class PedidoService:
         usuario_id,
         motivo: str | None = None,
     ):
+        """Avanza el pedido a un nuevo estado, validando las transiciones."""
 
         if nuevo_estado_codigo == "CANCELADO" and not motivo:
             raise HTTPException(
@@ -297,7 +300,7 @@ class PedidoService:
         usuario_id,
         motivo: str | None = None,
     ):
-
+        """Cancela un pedido, validando que se encuentre en un estado cancelable."""
         pedido = self.repo.get_by_id(pedido_id)
 
         if not pedido:
@@ -359,7 +362,7 @@ class PedidoService:
         offset,
         estado_codigo=None
     ):
-
+        """Lista los pedidos con paginación, filtrados por cliente o administrador."""
         if es_cliente:
 
             pedidos = self.repo.get_paginated(
@@ -387,7 +390,7 @@ class PedidoService:
         return paginated_response(pedidos, total, page=(offset // limit) + 1, size=limit)
 
     def obtener_pedido(self, pedido_id, usuario_id=None, es_cliente=False):
-
+        """Obtiene un pedido por su ID, con control de acceso."""
         pedido = self.repo.get_by_id(pedido_id)
 
         if not pedido:
@@ -407,7 +410,7 @@ class PedidoService:
         return pedido
 
     def obtener_historial(self, pedido_id):
-
+        """Obtiene el historial de estados de un pedido."""
         pedido = self.repo.get_by_id(pedido_id)
 
         if not pedido:

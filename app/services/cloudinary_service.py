@@ -58,15 +58,15 @@ class CloudinaryService:
         """
         Sube un archivo a Cloudinary.
 
-        Args:
+        Argumentos:
             contenido: Bytes de la imagen (ya validados)
             public_id: ID público para el archivo en Cloudinary
             folder: Carpeta dentro de Cloudinary (default: 'foodstore')
 
-        Returns:
+        Retorna:
             Dict con secure_url, public_id, width, height, format, resource_type
 
-        Raises:
+        Lanza:
             HTTPException 502 si Cloudinary no está disponible
         """
         try:
@@ -75,7 +75,9 @@ class CloudinaryService:
                 public_id=public_id,
                 folder=folder,
                 overwrite=False,
-                resource_type="image"
+                resource_type="image",
+                allowed_formats=["jpg", "jpeg", "png", "webp"],
+                unique_filename=True
             )
 
             logger.info(
@@ -110,13 +112,13 @@ class CloudinaryService:
         """
         Elimina una imagen de Cloudinary por su public_id.
 
-        Args:
+        Argumentos:
             public_id: ID público de la imagen en Cloudinary
 
-        Returns:
+        Retorna:
             True si se eliminó correctamente
 
-        Raises:
+        Lanza:
             HTTPException 502 si Cloudinary no está disponible
         """
         try:

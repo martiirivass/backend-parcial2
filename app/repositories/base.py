@@ -11,6 +11,9 @@ class BaseRepository(Generic[T]):
         self.db = db
         self.model_class = model_class
 
+    def list_all(self) -> List[T]:
+        return self.get_all()
+
     def get_all(self) -> List[T]:
         stmt = select(self.model_class)
         if hasattr(self.model_class, 'deleted_at'):

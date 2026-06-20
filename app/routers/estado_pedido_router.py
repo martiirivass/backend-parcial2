@@ -13,7 +13,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[EstadoPedidoRead])
 def listar(db: Session = Depends(get_session)):
-
+    """Lista todos los estados de pedido."""
     service = EstadoPedidoService(db)
 
     return service.listar()
@@ -21,7 +21,7 @@ def listar(db: Session = Depends(get_session)):
 
 @router.get("/{codigo}", response_model=EstadoPedidoRead)
 def obtener(codigo: str, db: Session = Depends(get_session)):
-
+    """Obtiene un estado de pedido por su código."""
     service = EstadoPedidoService(db)
 
     return service.obtener(codigo)
