@@ -9,8 +9,10 @@ from app.schemas.pago_schema import PagoRead
 
 
 class DetallePedidoCreate(SQLModel):
+    """Esquema para un ítem individual en un pedido nuevo."""
     producto_id: int
     cantidad: int = Field(default=1, ge=1)
+    personalizacion: Optional[list[int]] = None
 
     @field_validator("cantidad")
     def validar_cantidad(cls, v):
@@ -20,8 +22,10 @@ class DetallePedidoCreate(SQLModel):
 
 
 class PedidoCreate(SQLModel):
+    """Esquema para crear un nuevo pedido con ítems e información de pago."""
     forma_pago_codigo: str
     direccion_id: Optional[int] = None
+    notas: Optional[str] = None
     items: List[DetallePedidoCreate]
     referencia_pago: Optional[str] = Field(
         default=None, max_length=200,
@@ -40,15 +44,18 @@ class PedidoCreate(SQLModel):
 
 
 class AvanceEstadoRequest(SQLModel):
+    """Cuerpo de la solicitud para avanzar un pedido al siguiente estado."""
     estado_codigo: str
     motivo: Optional[str] = None
 
 
 class CancelarPedidoRequest(SQLModel):
+    """Cuerpo de la solicitud para cancelar un pedido."""
     motivo: Optional[str] = None
 
 
 class DetallePedidoRead(SQLModel):
+    """Modelo de lectura para un detalle de pedido con valores snapshot."""
     pedido_id: int
     producto_id: int
     nombre_snapshot: str
@@ -60,6 +67,7 @@ class DetallePedidoRead(SQLModel):
 
 
 class PedidoRead(SQLModel):
+    """Modelo de lectura para un pedido con totales y marcas de tiempo."""
     id: int
     usuario_id: int
     direccion_id: Optional[int] = None
@@ -75,12 +83,14 @@ class PedidoRead(SQLModel):
 
 
 class PedidoReadWithDetails(PedidoRead):
+    """Pedido con detalles, historial de estados y pagos incluidos."""
     detalles: List[DetallePedidoRead] = []
     historial_estados: List[HistorialEstadoRead] = []
     pagos: List[PagoRead] = []
 
 
 class PedidoListResponse(SQLModel):
+    """Respuesta paginada para la lista de pedidos."""
     data: List[PedidoReadWithDetails]
     total: int
     page: int

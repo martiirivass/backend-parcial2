@@ -40,7 +40,7 @@ def listar_usuarios(
     db: Session = Depends(get_session),
     current_user=Depends(require_roles("ADMIN"))
 ):
-
+    """Lista todos los usuarios con filtro opcional por rol y paginación."""
     service = AdminService(db)
 
     return service.listar_usuarios(
@@ -59,7 +59,7 @@ def obtener_usuario(
     db: Session = Depends(get_session),
     current_user=Depends(require_roles("ADMIN"))
 ):
-
+    """Obtiene un usuario por su ID."""
     service = AdminService(db)
 
     return service.obtener_usuario(
@@ -77,7 +77,7 @@ def actualizar_usuario(
     db: Session = Depends(get_session),
     current_user=Depends(require_roles("ADMIN"))
 ):
-
+    """Actualiza el perfil y/o asignación de roles de un usuario."""
     service = AdminService(db)
 
     with UnitOfWork(db):
@@ -101,7 +101,7 @@ def eliminar_usuario(
     db: Session = Depends(get_session),
     current_user=Depends(require_roles("ADMIN"))
 ):
-
+    """Eliminación lógica de un usuario (establece deleted_at)."""
     service = AdminService(db)
 
     with UnitOfWork(db):
@@ -120,7 +120,7 @@ def restaurar_usuario(
     db: Session = Depends(get_session),
     current_user=Depends(require_roles("ADMIN"))
 ):
-
+    """Restaura un usuario eliminado lógicamente."""
     service = AdminService(db)
 
     with UnitOfWork(db):

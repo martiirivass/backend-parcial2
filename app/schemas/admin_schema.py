@@ -5,6 +5,7 @@ from sqlmodel import SQLModel
 
 
 class AdminUserUpdate(SQLModel):
+    """Esquema para que el administrador actualice el perfil y roles de un usuario."""
     nombre: Optional[str] = None
     apellido: Optional[str] = None
     email: Optional[str] = None
@@ -14,6 +15,7 @@ class AdminUserUpdate(SQLModel):
 
 
 class AdminUserRead(SQLModel):
+    """Modelo de lectura para un usuario en el panel de administración."""
     id: int
     nombre: str
     apellido: str
@@ -24,6 +26,7 @@ class AdminUserRead(SQLModel):
 
 
 class AdminUsersListResponse(SQLModel):
+    """Respuesta paginada para la lista de usuarios del panel de administración."""
     data: List[AdminUserRead]
     total: int
     page: int

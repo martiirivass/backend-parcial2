@@ -18,7 +18,7 @@ class PagoService:
         self.repo = PagoRepository(db)
 
     def registrar_pago(self, datos):
-
+        """Registra un nuevo pago para un pedido."""
         pedido = self.repo.get_pedido_by_id(
             datos.pedido_id
         )
@@ -43,11 +43,11 @@ class PagoService:
         self,
         pedido_id: int
     ):
-
+        """Lista los pagos de un pedido específico."""
         return self.repo.get_by_pedido(
             pedido_id
         )
 
     def listar_todos(self):
-
+        """Lista todos los pagos."""
         return self.repo.get_all()

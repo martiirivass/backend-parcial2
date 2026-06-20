@@ -13,7 +13,7 @@ class DireccionEntregaService:
         self.repo = DireccionEntregaRepository(db)
 
     def crear_direccion(self, usuario_id, datos):
-
+        """Crea una nueva dirección de entrega para un usuario."""
         direccion = DireccionEntrega(
             usuario_id=usuario_id,
             **datos.model_dump()
@@ -24,10 +24,11 @@ class DireccionEntregaService:
         return direccion
 
     def listar_direcciones(self, usuario_id):
+        """Lista todas las direcciones de un usuario."""
         return self.repo.get_by_usuario(usuario_id)
 
     def obtener_direccion(self, direccion_id, usuario_id):
-
+        """Obtiene una dirección de entrega por su ID, filtrada por usuario."""
         direccion = self.repo.get_by_id(direccion_id)
 
         if not direccion:
@@ -45,7 +46,7 @@ class DireccionEntregaService:
         return direccion
 
     def actualizar_direccion(self, direccion_id, usuario_id, datos):
-
+        """Actualiza una dirección de entrega existente."""
         direccion = self.repo.get_by_id(direccion_id)
 
         if not direccion:
@@ -70,7 +71,7 @@ class DireccionEntregaService:
         return direccion
 
     def marcar_principal(self, direccion_id, usuario_id):
-
+        """Establece una dirección como principal del usuario, desmarcando las demás."""
         direccion = self.obtener_direccion(direccion_id, usuario_id)
 
         if direccion.es_principal:
@@ -89,7 +90,7 @@ class DireccionEntregaService:
         return direccion
 
     def eliminar_direccion(self, direccion_id, usuario_id):
-
+        """Elimina una dirección de entrega."""
         direccion = self.repo.get_by_id(direccion_id)
 
         if not direccion:

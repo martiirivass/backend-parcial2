@@ -54,7 +54,7 @@ def crear(
         require_roles("ADMIN")
     )
 ):
-
+    """Crea una nueva categoría."""
     service = CategoriaService(db)
 
     with UnitOfWork(db):
@@ -81,7 +81,7 @@ def listar(
     ),
     db: Session = Depends(get_session)
 ):
-
+    """Lista las categorías con filtro opcional por padre y paginación."""
     service = CategoriaService(db)
 
     return service.listar_categorias(
@@ -99,7 +99,7 @@ def listar(
 def get_tree(
     db: Session = Depends(get_session)
 ):
-
+    """Obtiene el árbol jerárquico de categorías."""
     service = CategoriaService(db)
 
     return service.get_tree()
@@ -114,7 +114,7 @@ def obtener(
     categoria_id: int,
     db: Session = Depends(get_session)
 ):
-
+    """Obtiene una categoría por su ID."""
     service = CategoriaService(db)
 
     return service.obtener_categoria(
@@ -135,7 +135,7 @@ def actualizar(
         require_roles("ADMIN")
     )
 ):
-
+    """Actualiza una categoría existente."""
     service = CategoriaService(db)
 
     with UnitOfWork(db):
@@ -164,7 +164,7 @@ def eliminar(
         require_roles("ADMIN")
     )
 ):
-
+    """Elimina una categoría."""
     service = CategoriaService(db)
 
     with UnitOfWork(db):
@@ -187,7 +187,7 @@ def subir_imagen(
         require_roles("ADMIN")
     )
 ):
-
+    """Sube una imagen de categoría."""
     service = CategoriaService(db)
 
     with UnitOfWork(db):

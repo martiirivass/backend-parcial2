@@ -23,11 +23,11 @@ class CategoriaService:
 
         self.repo = CategoriaRepository(db)
 
-    # Crear categoría
     def crear_categoria(
         self,
         categoria_data
     ):
+        """Crea una nueva categoría."""
 
         nueva_categoria = Categoria(
             **categoria_data.model_dump()
@@ -39,13 +39,13 @@ class CategoriaService:
 
         return nueva_categoria
 
-    # Listar categorías
     def listar_categorias(
         self,
-        limit: int = 10,
-        offset: int = 0,
+        limit,
+        offset,
         parent_id=None
     ):
+        """Lista las categorías con paginación y filtro opcional por padre."""
 
         categorias = self.repo.get_all(
             parent_id=parent_id
@@ -60,9 +60,8 @@ class CategoriaService:
             "offset": offset,
         }
 
-    # Árbol recursivo
     def get_tree(self):
-
+        """Obtiene el árbol jerárquico de categorías."""
         todas = self.repo.get_all()
 
         def _build_tree(parent_id=None):
@@ -88,12 +87,11 @@ class CategoriaService:
 
         return _build_tree()
 
-    # Obtener categoría
     def obtener_categoria(
         self,
         categoria_id: int
     ):
-
+        """Obtiene una categoría por su ID."""
         categoria = self.repo.get_by_id(
             categoria_id
         )
@@ -107,12 +105,12 @@ class CategoriaService:
 
         return categoria
 
-    # Actualizar categoría
     def actualizar_categoria(
         self,
         categoria_id: int,
         datos
     ):
+        """Actualiza una categoría existente."""
 
         categoria = self.repo.get_by_id(
             categoria_id
@@ -143,12 +141,12 @@ class CategoriaService:
 
         return categoria
 
-    # Subir imagen
     def subir_imagen(
         self,
         categoria_id: int,
         archivo: UploadFile
     ):
+        """Sube una imagen de categoría a Cloudinary."""
 
         categoria = self.repo.get_by_id(
             categoria_id
@@ -174,11 +172,11 @@ class CategoriaService:
 
         return categoria
 
-    # Eliminar categoría
     def eliminar_categoria(
         self,
         categoria_id: int
     ):
+        """Elimina una categoría por su ID."""
 
         categoria = self.repo.get_by_id(
             categoria_id

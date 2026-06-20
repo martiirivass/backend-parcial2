@@ -32,7 +32,7 @@ class StatsService:
         fecha_desde: Optional[date] = None,
         fecha_hasta: Optional[date] = None,
     ) -> ResumenStats:
-
+        """Obtiene las estadísticas de resumen del dashboard (ventas, pedidos, clientes)."""
         resumen = self.repo.get_resumen_data(
             fecha_desde=fecha_desde,
             fecha_hasta=fecha_hasta,
@@ -56,7 +56,7 @@ class StatsService:
         fecha_desde: Optional[date] = None,
         fecha_hasta: Optional[date] = None,
     ) -> VentasSemanalesResponse:
-
+        """Obtiene los datos de ventas semanales para el gráfico del dashboard."""
         data = [
             VentaDiaria(
                 fecha=row["fecha"],
@@ -75,9 +75,11 @@ class StatsService:
 
     def get_productos_mas_vendidos(
         self,
-        limit: int = 10
+        limit: int = 10,
+        fecha_desde: Optional[date] = None,
+        fecha_hasta: Optional[date] = None,
     ) -> ProductosMasVendidosResponse:
-
+        """Obtiene los productos más vendidos por cantidad."""
         data = [
             ProductoMasVendido(
                 producto_id=row.producto_id,
@@ -88,7 +90,9 @@ class StatsService:
                 ingreso_total=row.ingreso_total,
             )
             for row in self.repo.get_productos_mas_vendidos(
-                limit
+                limit,
+                fecha_desde=fecha_desde,
+                fecha_hasta=fecha_hasta,
             )
         ]
 
@@ -101,7 +105,7 @@ class StatsService:
         fecha_desde: Optional[date] = None,
         fecha_hasta: Optional[date] = None,
     ) -> PedidosPorEstadoResponse:
-
+        """Obtiene la cantidad de pedidos agrupados por estado."""
         rows = self.repo.get_pedidos_por_estado(
             fecha_desde=fecha_desde,
             fecha_hasta=fecha_hasta,
@@ -122,7 +126,7 @@ class StatsService:
         fecha_desde: Optional[date] = None,
         fecha_hasta: Optional[date] = None,
     ) -> IngresosPorFormaPagoResponse:
-
+        """Obtiene los ingresos agrupados por forma de pago."""
         rows = self.repo.get_ingresos_por_forma_pago(
             fecha_desde=fecha_desde,
             fecha_hasta=fecha_hasta,

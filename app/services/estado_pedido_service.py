@@ -17,17 +17,15 @@ class EstadoPedidoService:
             db
         )
 
-    # Listar estados de pedido
     def listar(self):
-
+        """Lista todos los estados de pedido."""
         return self.repo.get_all()
 
-    # Obtener estado de pedido por codigo
     def obtener(
         self,
         codigo: str
     ):
-
+        """Obtiene un estado de pedido por su código."""
         ep = self.repo.get_by_codigo(
             codigo
         )

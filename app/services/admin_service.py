@@ -19,6 +19,7 @@ class AdminService:
         self.repo = AdminRepository(db)
 
     def obtener_usuario(self, usuario_id: int) -> Usuario:
+        """Obtiene un usuario por su ID."""
         usuario = self.repo.get_usuario(usuario_id)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
@@ -30,6 +31,7 @@ class AdminService:
         offset: int,
         rol_codigo: Optional[str] = None,
     ):
+        """Lista los usuarios con paginación y filtro opcional por rol."""
         usuarios, total = self.repo.list_usuarios(limit, offset, rol_codigo)
         return paginated_response(usuarios, total, page=(offset // limit) + 1, size=limit)
 
@@ -65,11 +67,13 @@ class AdminService:
         return usuario
 
     def eliminar_usuario(self, usuario_id: int) -> None:
+        """Eliminación lógica de un usuario estableciendo deleted_at."""
         usuario = self.obtener_usuario(usuario_id)
         usuario.deleted_at = datetime.now(timezone.utc)
         self.repo.update(usuario)
 
     def restaurar_usuario(self, usuario_id: int) -> Usuario:
+        """Restaura un usuario eliminado lógicamente."""
         usuario = self.obtener_usuario(usuario_id)
         usuario.deleted_at = None
         self.repo.update(usuario)

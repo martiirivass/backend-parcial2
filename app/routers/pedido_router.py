@@ -39,7 +39,7 @@ def crear_pedido(
         require_roles("CLIENT", "ADMIN")
     )
 ):
-
+    """Crea un nuevo pedido desde el carrito del cliente."""
     service = PedidoService(db, ws_manager)
 
     with UnitOfWork(db):
@@ -75,7 +75,7 @@ def listar_pedidos(
         require_roles("CLIENT", "ADMIN", "PEDIDOS")
     )
 ):
-
+    """Lista los pedidos con filtro opcional por estado y paginación."""
     service = PedidoService(db)
 
     return service.listar_pedidos(
@@ -100,7 +100,7 @@ def obtener_pedido(
         require_roles("CLIENT", "ADMIN", "PEDIDOS")
     )
 ):
-
+    """Obtiene un pedido por su ID con detalles e historial."""
     service = PedidoService(db)
 
     return service.obtener_pedido(
@@ -125,7 +125,7 @@ def avanzar_estado(
         require_roles("ADMIN", "PEDIDOS")
     )
 ):
-
+    """Avanza un pedido al siguiente estado (emite vía WebSocket)."""
     service = PedidoService(db, ws_manager)
 
     with UnitOfWork(db):
@@ -158,7 +158,7 @@ def cancelar_pedido(
         require_roles("CLIENT", "ADMIN")
     )
 ):
-
+    """Cancela un pedido (emite vía WebSocket)."""
     service = PedidoService(db, ws_manager)
 
     with UnitOfWork(db):
@@ -189,7 +189,7 @@ def obtener_historial(
         require_roles("CLIENT", "ADMIN", "PEDIDOS")
     )
 ):
-
+    """Obtiene el historial de estados de un pedido específico."""
     service = PedidoService(db)
 
     return service.obtener_historial(

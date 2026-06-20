@@ -22,6 +22,7 @@ def registrar_pago(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(require_roles("ADMIN")),
 ):
+    """Registra un nuevo pago para un pedido."""
     service = PagoService(db)
     with UnitOfWork(db):
         return service.registrar_pago(datos)
@@ -33,6 +34,7 @@ def list(
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(require_roles("ADMIN", "OPERADOR")),
 ):
+    """Lista los pagos, filtrados opcionalmente por ID de pedido."""
     service = PagoService(db)
 
     if pedido_id:

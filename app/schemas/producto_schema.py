@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 
 class ProductoBase(SQLModel):
+    """Esquema base con campos comunes de producto."""
     nombre: str
     descripcion: Optional[str] = None
     precio_base: Decimal
@@ -32,6 +33,7 @@ class ProductoBase(SQLModel):
 
 
 class ProductoCreate(ProductoBase):
+    """Esquema para crear un nuevo producto con relaciones de categoría e ingrediente."""
     categoria_ids: Optional[List[int]] = None
     ingrediente_ids: Optional[List[int]] = None
 
@@ -43,6 +45,7 @@ class ProductoCreate(ProductoBase):
 
 
 class ProductoUpdate(SQLModel):
+    """Esquema para actualizar un producto existente (todos los campos opcionales)."""
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     precio_base: Optional[Decimal] = None
@@ -61,6 +64,7 @@ class ProductoUpdate(SQLModel):
 
 
 class ProductoRead(ProductoBase):
+    """Modelo de lectura para un producto con alias precio e imagen_url calculados."""
     id: int
     precio: Decimal  # alias via @property del modelo
     imagen_url: Optional[str] = None  # alias via @property del modelo
@@ -68,11 +72,13 @@ class ProductoRead(ProductoBase):
 
 
 class ProductoReadWithRelations(ProductoRead):
+    """Producto con sus categorías e ingredientes incluidos."""
     categorias: List["CategoriaRead"] = []
     ingredientes: List["IngredienteRead"] = []
 
 
 class ProductoImagenesUpdate(SQLModel):
+    """Esquema para actualizar las imágenes de un producto."""
     imagenes_url: List[str]
 
     @field_validator("imagenes_url")
@@ -83,11 +89,13 @@ class ProductoImagenesUpdate(SQLModel):
 
 
 class ProductoDisponibilidadUpdate(SQLModel):
+    """Esquema para alternar la disponibilidad de un producto y actualizar su stock."""
     disponible: bool
     stock_cantidad: Optional[int] = None
 
 
 class ProductoIngredienteCreate(SQLModel):
+    """Esquema para vincular un ingrediente a un producto con cantidad."""
     ingrediente_id: int
     cantidad: float = 1.0
     unidad_medida_id: Optional[int] = None
@@ -95,6 +103,7 @@ class ProductoIngredienteCreate(SQLModel):
 
 
 class ProductoIngredienteRead(SQLModel):
+    """Modelo de lectura para una relación producto-ingrediente."""
     producto_id: int
     ingrediente_id: int
     nombre_ingrediente: str

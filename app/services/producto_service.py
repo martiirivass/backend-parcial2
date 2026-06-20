@@ -50,11 +50,11 @@ class ProductoService:
 
         self.ing_repo = IngredienteRepository(db)
 
-    # Crear producto
     def crear_producto(
         self,
         producto_data
     ):
+        """Crea un nuevo producto con relaciones de categoría e ingrediente."""
 
         data = producto_data.model_dump(
             exclude={
@@ -100,7 +100,7 @@ class ProductoService:
         self,
         producto_id: int
     ):
-
+        """Obtiene un producto por su ID."""
         producto = self.repo.get_by_id(
             producto_id
         )
@@ -112,7 +112,6 @@ class ProductoService:
 
         return producto
 
-    # Listar productos
     def listar_productos(
         self,
         page: int = 1,
@@ -121,6 +120,7 @@ class ProductoService:
         disponible=None,
         q=None
     ):
+        """Lista los productos con paginación y filtros opcionales."""
 
         skip = (page - 1) * size
 
@@ -161,7 +161,7 @@ class ProductoService:
         producto_id,
         datos
     ):
-
+        """Actualiza la disponibilidad y el stock de un producto."""
         producto = self.repo.get_by_id(
             producto_id
         )
@@ -188,7 +188,7 @@ class ProductoService:
         producto_id,
         datos
     ):
-
+        """Actualiza un producto existente."""
         producto = self.repo.get_by_id(
             producto_id
         )
@@ -253,7 +253,7 @@ class ProductoService:
         self,
         producto_id
     ):
-
+        """Eliminación lógica de un producto."""
         producto = self.repo.get_by_id(
             producto_id
         )
@@ -280,6 +280,7 @@ class ProductoService:
         producto_id: int,
         imagenes_url: list[str]
     ):
+        """Reemplaza las imágenes de un producto."""
         producto = self.repo.get_by_id(producto_id)
 
         if not producto:
@@ -302,7 +303,7 @@ class ProductoService:
         producto_id: int,
         archivo: UploadFile
     ):
-
+        """Sube una imagen de producto a Cloudinary."""
         producto = self.repo.get_by_id(
             producto_id
         )

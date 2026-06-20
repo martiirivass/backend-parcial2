@@ -1,6 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import Index, text
 
 if TYPE_CHECKING:
     from app.models.usuario import Usuario
@@ -8,6 +9,14 @@ if TYPE_CHECKING:
 
 class DireccionEntrega(SQLModel, table=True):
     __tablename__ = "direcciones_entrega"
+    __table_args__ = (
+        Index(
+            "ix_direccion_entrega_principal_unica",
+            "usuario_id",
+            unique=True,
+            postgresql_where=text("es_principal = true")
+        ),
+    )
 
     id: Optional[int] = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id")

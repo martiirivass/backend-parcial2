@@ -17,17 +17,15 @@ class FormaPagoService:
             db
         )
 
-    # Listar formas de pago
     def listar(self):
-
+        """Lista todas las formas de pago."""
         return self.repo.get_all()
 
-    # Obtener forma de pago por codigo
     def obtener(
         self,
         codigo: str
     ):
-
+        """Obtiene una forma de pago por su código."""
         fp = self.repo.get_by_codigo(
             codigo
         )

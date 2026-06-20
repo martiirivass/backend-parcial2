@@ -24,6 +24,17 @@ class RegisterRequest(BaseModel):
     def nombre_min_length(cls, v: str) -> str:
         if len(v) < 2:
             raise ValueError("El nombre debe tener al menos 2 caracteres")
+        if len(v) > 80:
+            raise ValueError("El nombre no puede superar los 80 caracteres")
+        return v
+
+    @field_validator("apellido")
+    @classmethod
+    def apellido_min_length(cls, v: str) -> str:
+        if v and len(v) < 2:
+            raise ValueError("El apellido debe tener al menos 2 caracteres")
+        if v and len(v) > 80:
+            raise ValueError("El apellido no puede superar los 80 caracteres")
         return v
 
 
@@ -54,7 +65,7 @@ class RegisterResponse(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str
+    token_type: str = "bearer"
     expires_in: int
 
 
