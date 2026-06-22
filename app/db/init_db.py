@@ -145,6 +145,12 @@ def _run_migrations(engine):
             ALTER TABLE pagos
             ALTER COLUMN transaction_amount TYPE NUMERIC(10,2) USING transaction_amount::numeric(10,2)
         """))
+        # ── Productos: imagen_public_id ──────────────────────────────
+        conn.execute(text("""
+            ALTER TABLE productos
+            ADD COLUMN IF NOT EXISTS imagen_public_id VARCHAR
+        """))
+
         # ── Ingredientes: stock_cantidad ───────────────────────────────
         conn.execute(text("""
             ALTER TABLE ingredientes
