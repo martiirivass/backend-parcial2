@@ -13,6 +13,7 @@ from fastapi import (
 from sqlmodel import Session
 
 from app.core.limiter import limiter
+from app.core.config import settings
 
 from app.auth.schemas import (
     LoginRequest,
@@ -55,8 +56,6 @@ from app.core.unit_of_work import (
     UnitOfWork
 )
 
-from app.core.limiter import limiter
-
 router = APIRouter(
     prefix="/auth",
     tags=["Auth"]
@@ -69,7 +68,7 @@ router = APIRouter(
     status_code=201,
     summary="Registrar usuario cliente"
 )
-@limiter.limit("30/minute")
+@limiter.limit(settings.RATE_LIMIT_REGISTER)
 def register(
     request: Request,
     data: RegisterRequest,
@@ -102,7 +101,7 @@ def register(
     status_code=200,
     summary="Iniciar sesión"
 )
-@limiter.limit("30/minute")
+@limiter.limit(settings.RATE_LIMIT_LOGIN)
 def login(
     request: Request,
     data: LoginRequest,
@@ -169,6 +168,7 @@ def login(
     status_code=200,
     summary="Renovar access token"
 )
+@limiter.limit(settings.RATE_LIMIT_DEFAULT)
 def refresh(
     request: Request,
     response: Response,

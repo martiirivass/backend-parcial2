@@ -3,7 +3,8 @@ from typing import Annotated, Optional
 from fastapi import (
     APIRouter,
     Depends,
-    Query
+    Query,
+    Request,
 )
 
 from sqlmodel import Session
@@ -20,6 +21,8 @@ from app.auth.permissions import (
     require_roles
 )
 
+from app.core.limiter import limiter
+from app.core.config import settings
 from app.services.admin_service import AdminService
 from app.core.unit_of_work import UnitOfWork
 
@@ -71,7 +74,9 @@ def obtener_usuario(
     "/usuarios/{usuario_id}",
     response_model=AdminUserRead
 )
+@limiter.limit(settings.RATE_LIMIT_ADMIN)
 def actualizar_usuario(
+    request: Request,
     usuario_id: int,
     datos: AdminUserUpdate,
     db: Session = Depends(get_session),
@@ -96,7 +101,9 @@ def actualizar_usuario(
     "/usuarios/{usuario_id}",
     status_code=204
 )
+@limiter.limit(settings.RATE_LIMIT_ADMIN)
 def eliminar_usuario(
+    request: Request,
     usuario_id: int,
     db: Session = Depends(get_session),
     current_user=Depends(require_roles("ADMIN"))
@@ -115,7 +122,9 @@ def eliminar_usuario(
     "/usuarios/{usuario_id}/restore",
     response_model=AdminUserRead
 )
+@limiter.limit(settings.RATE_LIMIT_ADMIN)
 def restaurar_usuario(
+    request: Request,
     usuario_id: int,
     db: Session = Depends(get_session),
     current_user=Depends(require_roles("ADMIN"))

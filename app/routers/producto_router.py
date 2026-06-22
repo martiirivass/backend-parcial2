@@ -12,6 +12,7 @@ from fastapi import (
     Depends,
     HTTPException,
     Query,
+    Request,
     UploadFile,
     File,
     Form
@@ -43,6 +44,7 @@ from app.services.producto_service import (
     ProductoService
 )
 
+from app.core.limiter import limiter
 from app.core.unit_of_work import UnitOfWork
 
 logger = logging.getLogger(__name__)
@@ -82,7 +84,9 @@ def crear_producto(
 
 # Listar productos
 @router.get("/")
+@limiter.limit("10/minute")
 def listar(
+    request: Request,
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
     offset: Annotated[int, Query(ge=0)] = 0,
     categoria_id: Optional[int] = Query(

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from typing import Annotated, Optional
 from sqlmodel import Session
 
@@ -15,6 +15,7 @@ from app.schemas.pedido_schema import (
 from app.services.pedido_service import PedidoService
 
 from app.auth.permissions import require_roles
+from app.core.limiter import limiter
 from app.models.usuario import Usuario
 
 from app.core.unit_of_work import UnitOfWork
@@ -32,7 +33,9 @@ router = APIRouter(
     response_model=PedidoReadWithDetails,
     status_code=201
 )
+@limiter.limit("10/minute")
 def crear_pedido(
+    request: Request,
     datos: PedidoCreate,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(
@@ -117,7 +120,9 @@ def obtener_pedido(
     "/{pedido_id}/estado",
     summary="Avanzar estado de un pedido"
 )
+@limiter.limit("30/minute")
 def avanzar_estado(
+    request: Request,
     pedido_id: int,
     datos: AvanceEstadoRequest,
     db: Session = Depends(get_session),
@@ -150,7 +155,9 @@ def avanzar_estado(
     "/{pedido_id}/cancelar",
     summary="Cancelar un pedido"
 )
+@limiter.limit("10/minute")
 def cancelar_pedido(
+    request: Request,
     pedido_id: int,
     datos: CancelarPedidoRequest,
     db: Session = Depends(get_session),

@@ -1,10 +1,11 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlmodel import Session
 
 from app.auth.permissions import require_roles
 from app.db.database import get_session
+from app.core.limiter import limiter
 from app.models.usuario import Usuario
 from app.schemas.pago_schema import PagoCreate, PagoRead
 from app.services.pago_service import PagoService
@@ -17,7 +18,9 @@ router = APIRouter(
 
 
 @router.post("/", response_model=PagoRead, status_code=201)
+@limiter.limit("10/minute")
 def registrar_pago(
+    request: Request,
     datos: PagoCreate,
     db: Session = Depends(get_session),
     current_user: Usuario = Depends(require_roles("ADMIN")),
