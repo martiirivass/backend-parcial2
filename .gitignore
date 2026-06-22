@@ -31,6 +31,4 @@ Thumbs.db
 *.log
 *.err
 
-# Build tools
-.opencode/
-openspec/
+
