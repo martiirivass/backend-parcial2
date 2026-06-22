@@ -1,5 +1,5 @@
 # Food Store — API Backend
-
+## VIDEO TPI : https://drive.google.com/file/d/1ZFp8-i0vOOvbBeB_6OVomRVmfqp7RQS-/view?usp=sharing
 [GitHub](https://github.com/martiirivass/backend-parcial2)
 
 Backend REST de Food Store, una aplicación de gestión de pedidos para delivery. Construido con **FastAPI**, **SQLModel** y **PostgreSQL**, con integración de pagos vía **MercadoPago** y notificaciones en tiempo real via **WebSocket**.
