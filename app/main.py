@@ -26,6 +26,7 @@ from app.core.errors import rfc7807_exception_handler
 from app.pagos.router import router as pagos
 from app.services.cloudinary_service import CloudinaryService
 from app.routers.uploads_router import router as uploads
+from app.core.logging_middleware import LoggingMiddleware
 
 
 from sqlmodel import Session
@@ -53,6 +54,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 print("[OK] CORS middleware agregado")
+
+app.add_middleware(LoggingMiddleware)
+print("[OK] LoggingMiddleware agregado")
 
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)

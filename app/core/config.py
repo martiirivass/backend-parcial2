@@ -41,6 +41,15 @@ class Settings(BaseSettings):
     CLOUDINARY_API_KEY: str | None = None
     CLOUDINARY_API_SECRET: str | None = None
 
+    # Rate limiting
+    REDIS_URL: str = ""
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_DEFAULT: str = "100/minute"
+    RATE_LIMIT_LOGIN: str = "10/minute"
+    RATE_LIMIT_REGISTER: str = "5/minute"
+    RATE_LIMIT_UPLOAD: str = "5/minute"
+    RATE_LIMIT_ADMIN: str = "30/minute"
+
     class Config:
         env_file = ".env"
         extra = "ignore"

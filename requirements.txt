@@ -12,3 +12,4 @@ python-multipart==0.0.20
 mercadopago==2.3.0
 cloudinary==1.44.2
 slowapi==0.1.10
+redis>=5.0.0

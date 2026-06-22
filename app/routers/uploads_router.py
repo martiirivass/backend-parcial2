@@ -5,6 +5,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
     UploadFile,
     File,
 )
@@ -14,7 +15,8 @@ from app.auth.dependencies import get_current_user
 from app.auth.permissions import require_roles
 from app.models.usuario import Usuario
 from app.services.cloudinary_service import CloudinaryService
-from app.core.config import cloudinary_configurado
+from app.core.limiter import limiter
+from app.core.config import cloudinary_configurado, settings
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,9 @@ router = APIRouter(
     status_code=201,
     summary="Subir imagen a Cloudinary"
 )
+@limiter.limit(settings.RATE_LIMIT_UPLOAD)
 def subir_imagen(
+    request: Request,
     file: UploadFile = File(...),
     current_user: Usuario = Depends(require_roles("ADMIN")),
 ):
